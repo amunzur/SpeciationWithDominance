@@ -240,16 +240,6 @@ def main():
 								# go to next generation
 								gen += 1
 
-							#parent fitness and load (use parent 1, but could be either)	
-							parents = np.random.randint(len(pop1), size = nHybrids)
-							parent_phenos = np.dot(pop1[parents],mut1)	
-							mean_parent_pheno = np.mean(parent_phenos, axis=0)
-							parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
-							pfit = np.mean(parent_fitnesses) #mean parent fitness
-							# logpfit = np.log(pfit) #log mean fitness
-							# pload = - np.mean(logpfit) #segregation load
-							# psegvar = np.mean(np.var(parent_phenos, axis = 0)) #segregation variance
-
 							#make variables to hold offspring phenotypes
 							offphenos = dict()
 							offpheno = []
