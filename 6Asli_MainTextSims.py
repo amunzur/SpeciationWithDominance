@@ -11,17 +11,6 @@ import math
 ##FUNCTIONS##
 ######################################################################
 
-def open_output_files(n, N, alpha, u, sigma, data_dir):
-	"""
-	This function opens the output files and returns file
-	handles to each.
-	"""
-	sim_id = 'n%d_N%d_alpha%.4f_u%.4f_sigma%.4f' %(n, N, alpha, u, sigma)
-	outfile_A = open("%s/Fig3_4_%s.csv" %(data_dir, sim_id), "w") #summary data
-	outfile_B = open("%s/Fig3_4_phenotypes_%s.csv" %(data_dir, sim_id),"wb") #hybrid phenotypes
-	outfile_C = open("%s/Fig3_4_ancestral_mutations_%s.csv" %(data_dir, sim_id),"wb") #stats on ancestral mutations
-	return [outfile_A, outfile_B, outfile_C]
-
 def write_data_to_output(fileHandles, data):
 	"""
 	This function writes a (time, data) pair to the
@@ -44,8 +33,11 @@ def found(n_muts, N_adapt, n):
 
 	#make ancestor
 	#de novo only, even if p_mut>0
-	if popfound == np.array([[1]] * N_adapt) or mutfound == np.array([[0] * n]):
+	if n_muts < 0:
+		popfound = np.array([[1]] * N_adapt)
+		mutfound = np.array([[0] * n])
 	return [popfound, mutfound]
+
 
 def fitness(phenos, theta, sigma):
 	"""
@@ -172,8 +164,6 @@ def main():
 				elif n > 2:
 					theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
 
-				# open output files
-				[fileHandle_A, fileHandle_B, fileHandle_C] = open_output_files(n, N_adapt, alpha_adapt, u_adapt, sigma_adapt, data_dir)
 
 				#loop over optima
 				j = 0
