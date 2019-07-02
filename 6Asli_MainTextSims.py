@@ -11,6 +11,17 @@ import math
 ##FUNCTIONS##
 ######################################################################
 
+def open_output_files(n, N, alpha, u, sigma, data_dir):
+	"""
+	This function opens the output files and returns file
+	handles to each.
+	"""
+	sim_id = 'n%d_N%d_alpha%.4f_u%.4f_sigma%.4f' %(n, N, alpha, u, sigma)
+	outfile_A = open("%s/Fig3_4_%s.csv" %(data_dir, sim_id), "w") #summary data
+	outfile_B = open("%s/Fig3_4_phenotypes_%s.csv" %(data_dir, sim_id),"wb") #hybrid phenotypes
+	outfile_C = open("%s/Fig3_4_ancestral_mutations_%s.csv" %(data_dir, sim_id),"wb") #stats on ancestral mutations
+	return [outfile_A, outfile_B, outfile_C]
+
 def write_data_to_output(fileHandles, data):
 	"""
 	This function writes a (time, data) pair to the
