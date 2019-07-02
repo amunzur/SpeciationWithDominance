@@ -26,19 +26,6 @@ def close_output_files(fileHandles):
 	"""
 	fileHandles.close()
 
-def found(n_muts, N_adapt, n):
-	"""
-	This function creates a founding population from an ancestral one
-	"""
-
-	#make ancestor
-	#de novo only, even if p_mut>0
-	if n_muts < 0:
-		popfound = np.array([[1]] * N_adapt)
-		mutfound = np.array([[0] * n])
-	return [popfound, mutfound]
-
-
 def fitness(phenos, theta, sigma):
 	"""
 	This function determines relative fitness
@@ -164,6 +151,9 @@ def main():
 				elif n > 2:
 					theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
 
+				# open output files
+				[fileHandle_A, fileHandle_B, fileHandle_C] = open_output_files(n, N_adapt, alpha_adapt, u_adapt, sigma_adapt, data_dir)
+
 
 				#loop over optima
 				j = 0
@@ -191,7 +181,10 @@ def main():
 						while rep < nreps:
 
 							#found identical populations
-							[popfound, mutfound] = found(n_muts, N_adapt, n)
+							
+							popfound = np.array([[1]] * N_adapt)
+							mutfound = np.array([[0] * n])
+
 							[pop1, mut1] = [popfound, mutfound]
 							[pop2, mut2] = [popfound, mutfound]
 
@@ -229,6 +222,16 @@ def main():
 
 								# go to next generation
 								gen += 1
+
+								#parent fitness and load (use parent 1, but could be either)	
+							parents = np.random.randint(len(pop1), size = nHybrids)
+							parent_phenos = np.dot(pop1[parents],mut1)	
+							mean_parent_pheno = np.mean(parent_phenos, axis=0)
+							parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
+							pfit = np.mean(parent_fitnesses) #mean parent fitness
+							# logpfit = np.log(pfit) #log mean fitness
+							# pload = - np.mean(logpfit) #segregation load
+							# psegvar = np.mean(np.var(parent_phenos, axis = 0)) #segregation variance
 
 							#make variables to hold offspring phenotypes
 							offphenos = dict()
