@@ -171,7 +171,7 @@ def main():
 					
 					#set optima
 					theta2 = theta2_list[j]
-						
+
 					# #set up plot of hybrid load versus number of ancestral mutations (n_muts)
 					# plt.axis([0, max(n_mut_list)+1, 0, 0.1])
 					# plt.ylabel('hybrid load at generation %d (mean $\pm$ SD of %d replicates)' %(maxgen,nreps))
@@ -192,37 +192,37 @@ def main():
 						#intitialize generation counter
 						gen = 0
 
-					# run until maxgen
-					while gen < maxgen + 1:
+						# run until maxgen
+						while gen < maxgen + 1:
 
-						# genotype to phenotype
-						phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual
-						phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual
+							# genotype to phenotype
+							phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual
+							phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual
 
-						# phenotype to fitness
-						w1 = fitness(phenos1, theta1, sigma_adapt)
-						w2 = fitness(phenos2, theta2, sigma_adapt)
+							# phenotype to fitness
+							w1 = fitness(phenos1, theta1, sigma_adapt)
+							w2 = fitness(phenos2, theta2, sigma_adapt)
 
-						# wright-fisher (multinomial) sampling
-						parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen
-						off1 = np.repeat(pop1, parents1, axis=0) # offspring genotypes
-						parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
-						off2 = np.repeat(pop2, parents2, axis=0) # offspring genotypes
+							# wright-fisher (multinomial) sampling
+							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen
+							off1 = np.repeat(pop1, parents1, axis=0) # offspring genotypes
+							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
+							off2 = np.repeat(pop2, parents2, axis=0) # offspring genotypes
 
-						# mating and recombination
-						off1 = recomb(off1)
-						off2 = recomb(off2)
+							# mating and recombination
+							off1 = recomb(off1)
+							off2 = recomb(off2)
 
-						# mutation and population update
-						[pop1, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
-						[pop2, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
+							# mutation and population update
+							[pop1, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
+							[pop2, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
-						# remove lost mutations (all zero columns in pop)
-						[pop1, mut1] = remove_muts(remove, remove_lost, pop1, mut1, mutfound)
-						[pop2, mut2] = remove_muts(remove, remove_lost, pop2, mut2, mutfound)
+							# remove lost mutations (all zero columns in pop)
+							[pop1, mut1] = remove_muts(remove, remove_lost, pop1, mut1, mutfound)
+							[pop2, mut2] = remove_muts(remove, remove_lost, pop2, mut2, mutfound)
 
-						# go to next generation
-						gen += 1
+							# go to next generation
+							gen += 1
 
 						#parent fitness and load (use parent 1, but could be either)	
 						parents = np.random.randint(len(pop1), size = nHybrids)
@@ -240,11 +240,11 @@ def main():
 
 						#make each of nHybrids hybrids
 						for k in range(nHybrids):
-						    # choose random parents
+							# choose random parents
 							randpar1 = pop1[np.random.choice(len(pop1))] 
 							randpar2 = pop2[np.random.choice(len(pop2))]
 							# get random parent phenotypes
-							phenpar1 = np.dot(randpar1, mut1) 
+							phenpar1 = np.dot(randpar1, mut1)
 							phenpar2 = np.dot(randpar2, mut2)
 							# get mutations held by random parents
 							mutpar1 = mut1 * randpar1[:, None]
@@ -304,9 +304,9 @@ def main():
 						
 						# compute the average number of alleles that fix
 						# n_fix_avg = (n1 + n2)/2
-					
+
 						#save hybrid phenotype data (to make hybrid clouds)
-						pheno_data = np.column_stack( [np.array([i+1 for i in range(len(offpheno))]), np.array([rep+1]*len(offpheno)), np.array([n_muts]*len(offpheno)), np.array([round(angles[j]*180/math.pi,2)]*len(offpheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(offpheno)), offpheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
+						pheno_data = np.column_stack( [np.array([i+1 for i in range(len(offpheno))]), np.array([rep+1]*len(offpheno)), np.array([round(angles[j]*180/math.pi,2)]*len(offpheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(offpheno)), offpheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
 						np.savetxt(fileHandle_B, pheno_data, fmt='%.3f', delimiter=',') #save
 						
 						# #rotate axes so that new x axis is parallel to the line connecting parental optima
@@ -382,10 +382,10 @@ def main():
 						# rel_var_effect_dn2 = mut2_fixed_dn_var[0]/np.mean(mut2_fixed_dn_var[1:])
 						# rel_effect_dn_sel = (rel_effect_dn1 + rel_effect_dn2) /2
 						# rel_var_effect_dn_sel = (rel_var_effect_dn1 + rel_var_effect_dn2) /2
-						hyloads[rep] = hyload #save hybrid load for this replicate
+						#hyloads[rep] = hyload #save hybrid load for this replicate
 
 						#save summary data
-						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, n_muts, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), rhyfit])
+						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), rhyfit])
 
 						#print an update
 						print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1)) 
@@ -397,8 +397,8 @@ def main():
 						# plt.errorbar(n_mut_list[i], np.mean(hyloads), yerr=np.var(hyloads)**0.5, fmt='o', color='k')
 						# plt.pause(0.01)
 
-						#go to next n_muts value
-						i += 1
+						# #go to next n_muts value
+						# i += 1
 
 
 					#go to next optimum
@@ -421,7 +421,7 @@ def main():
 ######################################################################
 ##RUNNING ADAPTATION FUNCTION##
 ######################################################################    
-	
+
 start = time.time()
 main()
 end = time.time()
