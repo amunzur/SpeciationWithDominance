@@ -170,15 +170,19 @@ def main():
 						popfound = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
 						mutfound = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
 
-						[pop1, mut1] = [popfound, mutfound] #this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
-						[pop2, mut2] = [popfound, mutfound]
+						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
+						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-						parent1_chrom1 = np.array([pop1, mut1]) # 1st chromosome of parent1
-						parent1_chrom2 = np.array([pop1, mut1]) # 2nd chromosome of parent1
+						pop1_chrom1 = np.array(pop1) # genotype of 1st chromosome of pop1
+						pop1_chrom2 = np.array(pop1) # genotype of 2nd chromosome of pop1
 
-						parent2_chrom1 = np.array([pop2, mut2]) # 1st chromosome of parent2
-						parent2_chrom2 = np.array([pop2, mut2]) # 2nd chromosome of parent2
+						pop1_overall = (parent1_chrom1 + parent1_chrom2) / 2 # two chromosomes of pop1 averaged
 
+
+						pop2_chrom1 = np.array(pop2) # 1st chromosome of pop2
+						pop2_chrom2 = np.array(pop2) # 2nd chromosome of pop2
+
+						pop2_overall = (parent2_chrom1 + parent1_chrom2) / 2 # two chromosomes of pop2 averaged
 
 						#intitialize generation counter
 						gen = 0
@@ -187,11 +191,12 @@ def main():
 						while gen < maxgen + 1:
 
 							# genotype to phenotype
-							phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual (phenotype of the mutations)
-							phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
+							# phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual (phenotype of the mutations)
+							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
-							# my attempt to create a diploid phenotype:
-							phenos1 = 
+							# my phenotype to genotype (diploid):
+							phenos1 = np.dot(pop1_overall, mut1)
+							phenos2 = np.dot(pop2_overall, mut2)
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
