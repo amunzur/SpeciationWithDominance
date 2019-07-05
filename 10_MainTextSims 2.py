@@ -105,7 +105,6 @@ sigma_adapts = [10] #selection strengths
 
 opt_dist = 1 #distance to optima
 
-# n_angles = 36 #number of angles between optima to simulate (including 0 and 180) (>=2)
 n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
 n_mut_list = [[0, 50]] # de novo and one SGV scenario
@@ -171,7 +170,7 @@ def main():
 					while rep < nreps:
 
 						#found identical populations
-						popfound = np.array([[1]] * N_adapt)
+						popfound = np.array([[1]] * N_adapt) #this creates an array with 
 						mutfound = np.array([[0] * n])
 
 						[pop1, mut1] = [popfound, mutfound]
@@ -218,9 +217,6 @@ def main():
 						mean_parent_pheno = np.mean(parent_phenos, axis=0)
 						parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
 						pfit = np.mean(parent_fitnesses) #mean parent fitness
-						# logpfit = np.log(pfit) #log mean fitness
-						# pload = - np.mean(logpfit) #segregation load
-						# psegvar = np.mean(np.var(parent_phenos, axis = 0)) #segregation variance
 
 						#make variables to hold offspring phenotypes
 						offphenos = dict()
