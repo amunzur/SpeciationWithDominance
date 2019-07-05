@@ -106,8 +106,6 @@ opt_dist = 1 #distance to optima
 
 n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-n_mut_list = [[0, 50]] # de novo and one SGV scenario
-
 maxgen = 50 #total number of generations populations adapt for
 
 remove_lost = True #If true, remove mutations that are lost (0 for all individuals)
