@@ -173,11 +173,12 @@ def main():
 						[pop1, mut1] = [popfound, mutfound] #this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound]
 
-						c1_1 = [pop1, mut1] # 1st chromosome of parent1
-						c1_2 = [pop1, mut1] # 2nd chromosome of parent1
+						parent1_chrom1 = np.array([pop1, mut1]) # 1st chromosome of parent1
+						parent1_chrom2 = np.array([pop1, mut1]) # 2nd chromosome of parent1
 
-						c2_1 = [pop2, mut2] # 1st chromosome of parent2
-						c2_2 = [pop2, mut2] # 2nd chromosome of parent2
+						parent2_chrom1 = np.array([pop2, mut2]) # 1st chromosome of parent2
+						parent2_chrom2 = np.array([pop2, mut2]) # 2nd chromosome of parent2
+
 
 						#intitialize generation counter
 						gen = 0
@@ -187,7 +188,10 @@ def main():
 
 							# genotype to phenotype
 							phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual (phenotype of the mutations)
-							phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual
+							phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
+
+							# my attempt to create a diploid phenotype:
+							phenos1 = 
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
