@@ -19,8 +19,7 @@ def open_output_files(n, N, alpha, u, sigma, data_dir):
 	sim_id = 'n%d_N%d_alpha%.4f_u%.4f_sigma%.4f' %(n, N, alpha, u, sigma)
 	outfile_A = open("%s/Fig3_4_%s.csv" %(data_dir, sim_id), "w") #summary data
 	outfile_B = open("%s/Fig3_4_phenotypes_%s.csv" %(data_dir, sim_id),"wb") #hybrid phenotypes
-	outfile_C = open("%s/Fig3_4_ancestral_mutations_%s.csv" %(data_dir, sim_id),"wb") #stats on ancestral mutations
-	return [outfile_A, outfile_B, outfile_C]
+	return [outfile_A, outfile_B]
 
 def write_data_to_output(fileHandles, data):
 	"""
@@ -150,7 +149,7 @@ def main():
 					theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
 
 				# open output files
-				[fileHandle_A, fileHandle_B, fileHandle_C] = open_output_files(n, N_adapt, alpha_adapt, u_adapt, sigma_adapt, data_dir)
+				[fileHandle_A, fileHandle_B] = open_output_files(n, N_adapt, alpha_adapt, u_adapt, sigma_adapt, data_dir)
 
 				#loop over optima
 				j = 0
@@ -286,7 +285,6 @@ def main():
 				# cleanup
 				close_output_files(fileHandle_A)
 				close_output_files(fileHandle_B)
-				close_output_files(fileHandle_C)
 
 				#next dimension
 				l += 1
