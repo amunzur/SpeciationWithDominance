@@ -1,0 +1,6 @@
+where i left off today:
+
+trying to get the overall phenotype for pop1 and pop2. 
+problem is dimensions don't match up. 
+because they dont match, i cant use the dot function to find the average genotype of the two chromosomes. 
+for np.dot to work, # of coloumns of the 1st array and # of rows of the second array must match. 
