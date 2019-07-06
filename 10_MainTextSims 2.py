@@ -237,8 +237,8 @@ def main():
 						#make each of nHybrids hybrids
 						for k in range(nHybrids):
 							# choose random parents
-							randpar1 = pop1[np.random.choice(len(pop1))] 
-							randpar2 = pop2[np.random.choice(len(pop2))]
+							randpar1 = pop1_overall[np.random.choice(len(pop1_overall))] 
+							randpar2 = pop2_overall[np.random.choice(len(pop2_overall))]
 							# get random parent phenotypes
 							phenpar1 = np.dot(randpar1, mut1)
 							phenpar2 = np.dot(randpar2, mut2)
