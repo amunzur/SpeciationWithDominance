@@ -53,7 +53,7 @@ def recomb(surv):
 	rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
 	off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
 	off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
-	off = np.append(off_1, off_2, axis=0) #each product of meiosis
+	off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
 	return off
 
 def mutate(off, u, alpha, n, mut):
@@ -176,13 +176,8 @@ def main():
 						pop1_chrom1 = pop1 # genotype of 1st chromosome of pop1
 						pop1_chrom2 = pop1 # genotype of 2nd chromosome of pop1
 
-						pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop1 averaged
-
-
 						pop2_chrom1 = pop2 # 1st chromosome of pop2
 						pop2_chrom2 = pop2 # 2nd chromosome of pop2
-
-						pop2_overall = ((pop2_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop2 averaged
 
 						#intitialize generation counter
 						gen = 0
@@ -190,11 +185,14 @@ def main():
 						# run until maxgen
 						while gen < maxgen + 1:
 
-							# genotype to phenotype
+							# genotype to phenotype (haploid):
 							# phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual (phenotype of the mutations)
 							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
-							# my phenotype to genotype (diploid):
+							# genotype to phenotype (diploid):
+							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop1 averaged
+							pop2_overall = ((pop2_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop2 averaged
+
 							phenos1 = np.dot(pop1_overall, mut1)
 							phenos2 = np.dot(pop2_overall, mut2)
 
