@@ -173,16 +173,16 @@ def main():
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-						pop1_chrom1 = np.array(pop1) # genotype of 1st chromosome of pop1
-						pop1_chrom2 = np.array(pop1) # genotype of 2nd chromosome of pop1
+						pop1_chrom1 = pop1 # genotype of 1st chromosome of pop1
+						pop1_chrom2 = pop1 # genotype of 2nd chromosome of pop1
 
-						pop1_overall = (parent1_chrom1 + parent1_chrom2) / 2 # two chromosomes of pop1 averaged
+						pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop1 averaged
 
 
-						pop2_chrom1 = np.array(pop2) # 1st chromosome of pop2
-						pop2_chrom2 = np.array(pop2) # 2nd chromosome of pop2
+						pop2_chrom1 = pop2 # 1st chromosome of pop2
+						pop2_chrom2 = pop2 # 2nd chromosome of pop2
 
-						pop2_overall = (parent2_chrom1 + parent1_chrom2) / 2 # two chromosomes of pop2 averaged
+						pop2_overall = ((pop2_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop2 averaged
 
 						#intitialize generation counter
 						gen = 0
@@ -204,28 +204,28 @@ def main():
 
 							# wright-fisher (multinomial) sampling
 							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen
-							off1 = np.repeat(pop1, parents1, axis=0) # offspring genotypes
+							off1 = np.repeat(pop1_overall, parents1, axis=0) # offspring genotypes
 							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
-							off2 = np.repeat(pop2, parents2, axis=0) # offspring genotypes
+							off2 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes
 
 							# mating and recombination
 							off1 = recomb(off1)
 							off2 = recomb(off2)
 
 							# mutation and population update
-							[pop1, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
-							[pop2, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
+							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
+							[pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
 							# remove lost mutations (all zero columns in pop)
-							[pop1, mut1] = remove_muts(remove, remove_lost, pop1, mut1, mutfound)
-							[pop2, mut2] = remove_muts(remove, remove_lost, pop2, mut2, mutfound)
+							[pop1_overall, mut1] = remove_muts(remove, remove_lost, pop1_overall, mut1, mutfound)
+							[pop2_overall, mut2] = remove_muts(remove, remove_lost, pop2_overall, mut2, mutfound)
 
 							# go to next generation
 							gen += 1
 
 						#parent fitness and load (use parent 1, but could be either)	
 						parents = np.random.randint(len(pop1), size = nHybrids)
-						parent_phenos = np.dot(pop1[parents],mut1)	
+						parent_phenos = np.dot(pop1_overall[parents],mut1)	
 						mean_parent_pheno = np.mean(parent_phenos, axis=0)
 						parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
 						pfit = np.mean(parent_fitnesses) #mean parent fitness
