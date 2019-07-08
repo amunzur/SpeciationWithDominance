@@ -48,7 +48,40 @@ def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (haploid) and recombination (i.e, meiosis)
 	"""
+	#CROSSING OVER FOR POP1
+
+	x = int(np.random.randint(low = 0, high = len(pop1_chrom1), size = 1)) # gives a random number between 0 and len(pop1_chrom1), picks the breaking point ion the chromosome for CO
+	
+	pop1_chrom1_break1 = pop1_chrom1[x : len(pop1_chrom1)]
+	pop1_chrom1_break2 = pop1_chrom1[0 : x]
+
+	pop1_chrom2_break1 = pop1_chrom2[x : len(pop1_chrom2)]
+	pop1_chrom2_break2 = pop1_chrom2[0 : x]
+
+	pop1_chrom1 = np.append(pop1_chrom1_break1, pop2_chrom2_break2) # pairs up the two parts from different chromosomes
+	pop1_chrom2 = np.append(pop1_chrom2_break2, pop1_chrom1_break1) # pairs up the remaining parts of the two chromosomes 
+
+	#CROSSING OVER FOR POP2
+
+	y = int(np.random.randint(low = 0, high = len(pop2_chrom1), size = 1))
+
+	pop2_chrom1_break1 = pop2_chrom1[x : len(pop2_chrom1)]
+	pop2_chrom1_break2 = pop2_chrom1[0 : y]
+
+	pop2_chrom2_break1 = pop2_chrom2[x : len(pop2_chrom2)]
+	pop2_chrom2_break2 = pop2_chrom2[0 : y]
+
+	pop2_chrom1 = np.append(pop2_chrom1_break1, pop2_chrom2_break2) # pairs up the two parts from different chromosomes
+	pop2_chrom2 = np.append(pop2_chrom2_break2, pop2_chrom1_break1) # pairs up the remaining parts of the two chromosomes 
+
+	# PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
+
+	
+
+
 	pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
+	# (int(len(surv)/2) = number of rows, each row is a parent. what you have in the row is the genotype of the parent (?)
+	# 2 = number of coloumns
 	rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
 	rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
 	off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
