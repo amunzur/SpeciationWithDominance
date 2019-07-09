@@ -48,6 +48,38 @@ def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (haploid) and recombination (i.e, meiosis)
 	"""
+	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
+
+	parent1_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
+	parent1_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
+
+	parent1_overall = np.stack(parent1_chrom1, parent1_chrom2) # chrom1 and 2 of parent1 from pop1
+
+	rand = int(np.random.randint(low = 0, 2, size = len(surv)))
+
+
+
+
+	v = 0 
+	parent1_meiosis1 = [] #creates an empty list
+	np.array(parent1_meiosis1)
+	
+	while v < len(surv): #loop over the number of loci 
+		y = int(np.random.randint(low = 0, 2, size = 1))
+			
+			if y == 0: # y==0 means pick the first parent's genotype for the locus 
+				np.append(parent1_meiosis1, )
+			else: 
+
+
+
+
+	
+
+
+
+
+
 
 	global pop1_chrom1
 	global pop1_chrom2
@@ -111,6 +143,16 @@ def recomb(surv):
 	# off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
 	# return off
 
+
+	pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
+	rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
+	rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
+	off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
+	off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
+	off = np.append(off_1, off_2, axis=0) #each product of meiosis
+	return off
+
+
 def mutate(off, u, alpha, n, mut):
 	"""
 	This function creates mutations and updates population
@@ -118,9 +160,28 @@ def mutate(off, u, alpha, n, mut):
 	
 
 
-	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring. (creates number of offxrandom numbers as between 0 and 1)
+	
+
+	# h == 0 #looping over all the loci in off 
+	# while h < len(off): 
+	# 	h +=1
+	# 	rand3 = np.random.uniform(size = len(off))
+	# 	off[off > rand3] = 1
+		
+
+
+	# 	if rand < np.random.uniform(size = 1) is True: #if the loci is likely to mutate
+
+
+
+
+
+
+
+	#ORIGINAL CODE
+	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of offxrandom numbers as between 0 and 1)
 	nmuts = sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations - u is the mutation probability per generation per genome - ancestor
-	whomuts = np.where(rand3 < u) #indices of mutants, meaning where they are 
+	whomuts = np.where(rand3 < u_adapt) #indices of mutants, meaning where they are 
 	newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd rows:nmuts coloumns=n 
 	pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants
 	mut = np.append(mut, newmuts, axis=0) #append effect of new mutations to mutation list
