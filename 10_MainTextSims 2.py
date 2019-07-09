@@ -94,10 +94,10 @@ def recomb(surv):
 	elif l == 2:
 		off = np.stack((pop1_chrom1, pop2_chrom1), axis = 0)
 	
-	elif l == 3:	
+	else:	
 		off = np.stack((pop1_chrom2, pop2_chrom2), axis = 0)
 
-	return off
+	return off # we made the offspring, now they will act as parents and we will create mutations in them. 
 
 
 	# ORIGINAL CODE: 
@@ -115,10 +115,13 @@ def mutate(off, u, alpha, n, mut):
 	"""
 	This function creates mutations and updates population
 	"""
-	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring
-	nmuts = sum(rand3 < u) # mutate if random number is below mutation rate; returns number of new mutations
-	whomuts = np.where(rand3 < u) #indices of mutants
-	newmuts = np.random.normal(0, alpha, (nmuts, n)) #phenotypic effect of new mutations
+	
+
+
+	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring. (creates number of offxrandom numbers as between 0 and 1)
+	nmuts = sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations - u is the mutation probability per generation per genome - ancestor
+	whomuts = np.where(rand3 < u) #indices of mutants, meaning where they are 
+	newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd rows:nmuts coloumns=n 
 	pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants
 	mut = np.append(mut, newmuts, axis=0) #append effect of new mutations to mutation list
 	return [pop, mut]
@@ -152,7 +155,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [1000] #number of haploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.001 #mutation probability per generation per genome (0<u<1)
 sigma_adapts = [10] #selection strengths
