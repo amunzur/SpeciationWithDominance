@@ -7,7 +7,7 @@ axis 1: rusn across the coloumns
 when you do np.sum(np_array_2d, axis = 0), this function will collapse the rows. makes sense, axis 0 rowlardan asagi iniyor. onlari ekliyorsun. yani coloumnlari eklemis oluyorsun aslinda. 
 axis = 1 dersen colounmlari collapse et. yani so9oldan saga ekle, yaz. 
 
-np.ranodm.random((a * a))
+np.random.random((a * a))
 gives a * a array with float 
 
 np.random.randint(low = 10, high = 30, size = 6)
@@ -66,5 +66,11 @@ array([[1, 2, 5],
        [3, 4, 6]])
 >>> np.concatenate((a, b), axis=None)
 array([1, 2, 3, 4, 5, 6])
+
+np.random.choice -> creates a random 1D array. 
+ilk says: range
+ikinci sayi: size. mesela 10 ise 10 element oluyor arrayde. 
+replace = false olunca ayni sayilari tekrar etmiyor 
+
 
 
