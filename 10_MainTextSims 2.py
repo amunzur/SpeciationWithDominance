@@ -48,7 +48,14 @@ def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (haploid) and recombination (i.e, meiosis)
 	"""
-	#CROSSING OVER FOR POP1
+
+	global pop1_chrom1
+	global pop1_chrom2
+
+	global pop2_chrom1
+	global pop2_chrom2
+
+	# CROSSING OVER FOR POP1
 
 	x = int(np.random.randint(low = 0, high = len(pop1_chrom1), size = 1)) # gives a random number between 0 and len(pop1_chrom1), picks the breaking point ion the chromosome for CO
 	
@@ -61,7 +68,7 @@ def recomb(surv):
 	pop1_chrom1 = np.append(pop1_chrom1_break1, pop2_chrom2_break2) # pairs up the two parts from different chromosomes
 	pop1_chrom2 = np.append(pop1_chrom2_break2, pop1_chrom1_break1) # pairs up the remaining parts of the two chromosomes 
 
-	#CROSSING OVER FOR POP2
+	# CROSSING OVER FOR POP2
 
 	y = int(np.random.randint(low = 0, high = len(pop2_chrom1), size = 1))
 
@@ -74,20 +81,35 @@ def recomb(surv):
 	pop2_chrom1 = np.append(pop2_chrom1_break1, pop2_chrom2_break2) # pairs up the two parts from different chromosomes
 	pop2_chrom2 = np.append(pop2_chrom2_break2, pop2_chrom1_break1) # pairs up the remaining parts of the two chromosomes 
 
-	# PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
+	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
 
+	l = int(np.random.randint(low = 0, high = 4)) # randomly picks 0, 1, 2, 3 to randomly generate offsptring out of 4 possibilities 
+
+	if l == 0:
+		off = np.stack((pop1_chrom1, pop2_chrom2), axis = 0)
 	
+	elif l == 1:
+		off = np.stack((pop1_chrom2, pop2_chrom1), axis = 0)
+	
+	elif l == 2:
+		off = np.stack((pop1_chrom1, pop2_chrom1), axis = 0)
+	
+	elif l == 3:	
+		off = np.stack((pop1_chrom2, pop2_chrom2), axis = 0)
+
+	return off
 
 
-	pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
+	# ORIGINAL CODE: 
+	#pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
 	# (int(len(surv)/2) = number of rows, each row is a parent. what you have in the row is the genotype of the parent (?)
 	# 2 = number of coloumns
-	rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
-	rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
-	off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
-	off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
-	off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
-	return off
+	# rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
+	# rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
+	# off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
+	# off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
+	# off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
+	# return off
 
 def mutate(off, u, alpha, n, mut):
 	"""
