@@ -48,14 +48,16 @@ def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
+	
+	#RECOMBINATION IN POP1
+
+	# pick a random parent1 from pop1 
 	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
 
 	parent1_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
 	parent1_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
 
 	parent1_overall = np.stack(parent1_chrom1, parent1_chrom2) # chrom1 and 2 of parent1 from pop1
-
-	#RECOMBINATION IN POP1
 
 	#PARENT1 - MEIOSIS 1 (1st gamete)
 	
@@ -67,13 +69,13 @@ def recomb(surv):
 	while v < len(surv): #loop over the number of loci 
 		y = int(np.random.randint(2, size = 1)) # pick a random number, 0 or 1 
 			
-			if y == 0: # y == 0 means pick the first parent's genotype for the locus 
-				parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom1[v : v+1])
+		if y == 0: # y == 0 means pick the first parent's genotype for the locus 
+			parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom1[v : v+1])
 
-			else: 
-				parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom2[v : v+1])
+		else: 
+			parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom2[v : v+1])
 
-			v += 1 
+		v += 1 
 
 	#PARENT1 - MEIOSIS 2 (2nd gamete)
 
@@ -82,10 +84,13 @@ def recomb(surv):
 
 
 	for z in parent1_meiosis1:  
+		
 		z = 0 
+		
 		while z < len(surv):
 			if parent1_meiosis1[z] == 0:
 				parent1_meiosis2 = np.append(parent1_meiosis2, 1)
+			
 			elif parent1_meiosis1[z] == 1:
 				parent1_meiosis2 = np.append(parent1_meiosis2, 0)
 			z = z + 1
@@ -111,13 +116,13 @@ def recomb(surv):
 	while v < len(surv): #loop over the number of loci 
 		y = int(np.random.randint(2, size = 1)) # pick a random number, 0 or 1 
 			
-			if y == 0: # y == 0 means pick the first parent's genotype for the locus 
-				parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom1[v : v+1])
+		if y == 0: # y == 0 means pick the first parent's genotype for the locus 
+			parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom1[v : v+1])
 
-			else: 
-				parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom2[v : v+1])
+		else: 
+			parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom2[v : v+1])
 
-			v += 1 
+		v += 1 
 
 	#PARENT2 - MEIOSIS 2 (2nd gamete)
 
@@ -125,12 +130,17 @@ def recomb(surv):
 	np.array(parent2_meiosis2)
 
 	for z in parent1_meiosis1:  
+		
 		z = 0 
+		
 		while z < len(surv):
+			
 			if parent2_meiosis1[z] == 0:
 				parent2_meiosis2 = np.append(parent2_meiosis2, 1)
+			
 			elif parent2_meiosis1[z] == 1:
 				parent2_meiosis2 = np.append(parent2_meiosis2, 0)
+			
 			z = z + 1
 	
 	parent2_meiosis2 = parent1_meiosis2[0 : len(surv)]
@@ -311,7 +321,7 @@ def main():
 						pop2_chrom1 = pop2 # 1st chromosome of pop2
 						pop2_chrom2 = pop2 # 2nd chromosome of pop2
 
-						#intitialize generation counter
+						# intitialize generation counter
 						gen = 0
 
 						# run until maxgen
@@ -341,6 +351,7 @@ def main():
 							# mating and recombination
 							off1 = recomb(off1)
 							off2 = recomb(off2)
+
 
 							# mutation and population update
 							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
