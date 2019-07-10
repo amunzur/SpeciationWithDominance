@@ -44,6 +44,11 @@ def fitness(phenos, theta, sigma):
 	w = np.exp(-0.5 * sigma * dist**2) #fitness
 	return w
 
+def shuffle_along_axis(a, axis):
+	idx = np.random.rand(*a.shape).argsort(axis = axis)
+	return np.take_along_axis(a,idx,axis = axis) 
+
+
 def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
@@ -51,115 +56,50 @@ def recomb(surv):
 	
 	#RECOMBINATION IN POP1
 
-	# pick a random parent1 from pop1 
-	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
+	# Randomly pick parent1 from pop1
+	x = int(np.random.randint(low = 0, high = len(pop1_chrom1), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
 
 	parent1_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
 	parent1_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
+	parent1_overall = np.stack((parent1_chrom1, parent1_chrom2), axis = 1) # chrom1 and 2 of parent1 from pop1
 
-	parent1_overall = np.stack(parent1_chrom1, parent1_chrom2) # chrom1 and 2 of parent1 from pop1
+	#PARENT1 - recombination
 
-	#PARENT1 - MEIOSIS 1 (1st gamete)
-	
-	parent1_meiosis1 = [] #creates an empty list
-	np.array(parent1_meiosis1)
-	
-	v = 0 
-	
-	while v < len(surv): #loop over the number of loci 
-		y = int(np.random.randint(2, size = 1)) # pick a random number, 0 or 1 
-			
-		if y == 0: # y == 0 means pick the first parent's genotype for the locus 
-			parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom1[v : v+1])
+	parent1_overall = take_along_axis(parent1_overall, idx, axis = 1) # update parent1_overall after recombination
 
-		else: 
-			parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom2[v : v+1])
+	parent1_meiosis1 = np.delete(parent1_overall, 1, 1) # this deletes the 1st coloumn, rest is meiosis1 
+	parent1_meiosis2 = np.delete(parent1_overall, 0, 1) # this deletes the 0th coloumn, rest is meiosis2
 
-		v += 1 
-
-	#PARENT1 - MEIOSIS 2 (2nd gamete)
-
-	parent1_meiosis2 = []
-	np.array(parent1_meiosis2)
-
-
-	for z in parent1_meiosis1:  
-		
-		z = 0 
-		
-		while z < len(surv):
-			if parent1_meiosis1[z] == 0:
-				parent1_meiosis2 = np.append(parent1_meiosis2, 1)
-			
-			elif parent1_meiosis1[z] == 1:
-				parent1_meiosis2 = np.append(parent1_meiosis2, 0)
-			z = z + 1
-	
-	parent1_meiosis2 = parent1_meiosis2[0 : len(surv)]
-
-	#PARENT2's chromosomes
+	#Randomly pick parent2 from pop1
 
 	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
 
 	parent2_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
 	parent2_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
+	parent2_overall = np.stack((parent2_chrom1, parent2_chrom2), axis = 1) # chrom1 and 2 of parent2 from pop1
 
-	parent2_overall = np.stack(parent2_chrom1, parent2_chrom2) # chrom1 and 2 of parent1 from pop1
+	#PARENT2 - recombination 
 
-	#PARENT2 - MEIOSIS 1 (1st gamete)
+	parent2_overall = take_along_axis(parent2_overall, idx, axis = 1) # update parent2_overall after recombination
 
-	parent1_meiosis1 = [] #creates an empty list
-	np.array(parent1_meiosis1)
-	
-	v = 0 
-	
-	while v < len(surv): #loop over the number of loci 
-		y = int(np.random.randint(2, size = 1)) # pick a random number, 0 or 1 
-			
-		if y == 0: # y == 0 means pick the first parent's genotype for the locus 
-			parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom1[v : v+1])
-
-		else: 
-			parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom2[v : v+1])
-
-		v += 1 
-
-	#PARENT2 - MEIOSIS 2 (2nd gamete)
-
-	parent2_meiosis2 = []
-	np.array(parent2_meiosis2)
-
-	for z in parent1_meiosis1:  
-		
-		z = 0 
-		
-		while z < len(surv):
-			
-			if parent2_meiosis1[z] == 0:
-				parent2_meiosis2 = np.append(parent2_meiosis2, 1)
-			
-			elif parent2_meiosis1[z] == 1:
-				parent2_meiosis2 = np.append(parent2_meiosis2, 0)
-			
-			z = z + 1
-	
-	parent2_meiosis2 = parent1_meiosis2[0 : len(surv)]
+	parent2_meiosis1 = np.delete(parent2_overall, 1, 1) # this deletes the 1st coloumn, rest is meiosis1 
+	parent2_meiosis2 = np.delete(parent2_overall, 0, 1) # this deletes the 0th coloumn, rest is meiosis2
 
 	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
 
 	l = int(np.random.randint(low = 0, high = 4)) # randomly picks 0, 1, 2, 3 to randomly generate offsptring out of 4 possibilities 
 
 	if l == 0:
-		off = np.stack((parent1_meiosis1, parent2_meiosis1), axis = 0)
+		off = np.stack((parent1_meiosis1, parent2_meiosis1), axis = 1)
 	
 	elif l == 1:
-		off = np.stack((parent1_meiosis1, parent2_meiosis2), axis = 0)
+		off = np.stack((parent1_meiosis1, parent2_meiosis2), axis = 1)
 	
 	elif l == 2:
-		off = np.stack((parent1_meiosis2, parent2_meiosis1), axis = 0)
+		off = np.stack((parent1_meiosis2, parent2_meiosis1), axis = 1)
 	
 	else:	
-		off = np.stack((parent1_meiosis2, parent2_meiosis2), axis = 0)
+		off = np.stack((parent1_meiosis2, parent2_meiosis2), axis = 1)
 
 	return off # we made the offspring, now they will act as parents and we will create mutations in them. 
 
@@ -344,9 +284,9 @@ def main():
 
 							# wright-fisher (multinomial) sampling
 							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen
-							off1 = np.repeat(pop1_overall, parents1, axis=0) # offspring genotypes
+							off1 = np.repeat(pop1_overall, parents1, axis=0) # offspring genotypes of pop1 
 							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
-							off2 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes
+							off2 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes of pop2
 
 							# mating and recombination
 							off1 = recomb(off1)
