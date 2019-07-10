@@ -46,7 +46,7 @@ def fitness(phenos, theta, sigma):
 
 def recomb(surv):
 	"""
-	This function creates offspring through pairing of parents (haploid) and recombination (i.e, meiosis)
+	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
 	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
 
@@ -55,79 +55,101 @@ def recomb(surv):
 
 	parent1_overall = np.stack(parent1_chrom1, parent1_chrom2) # chrom1 and 2 of parent1 from pop1
 
-	rand = int(np.random.randint(low = 0, 2, size = len(surv)))
+	#RECOMBINATION IN POP1
 
-
-
-
-	v = 0 
+	#PARENT1 - MEIOSIS 1 (1st gamete)
+	
 	parent1_meiosis1 = [] #creates an empty list
 	np.array(parent1_meiosis1)
 	
+	v = 0 
+	
 	while v < len(surv): #loop over the number of loci 
-		y = int(np.random.randint(low = 0, 2, size = 1))
+		y = int(np.random.randint(2, size = 1)) # pick a random number, 0 or 1 
 			
-			if y == 0: # y==0 means pick the first parent's genotype for the locus 
-				np.append(parent1_meiosis1, )
+			if y == 0: # y == 0 means pick the first parent's genotype for the locus 
+				parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom1[v : v+1])
+
 			else: 
+				parent1_meiosis1 = np.append(parent1_meiosis1, parent1_chrom2[v : v+1])
+
+			v += 1 
+
+	#PARENT1 - MEIOSIS 2 (2nd gamete)
+
+	parent1_meiosis2 = []
+	np.array(parent1_meiosis2)
 
 
-
-
+	for z in parent1_meiosis1:  
+		z = 0 
+		while z < len(surv):
+			if parent1_meiosis1[z] == 0:
+				parent1_meiosis2 = np.append(parent1_meiosis2, 1)
+			elif parent1_meiosis1[z] == 1:
+				parent1_meiosis2 = np.append(parent1_meiosis2, 0)
+			z = z + 1
 	
+	parent1_meiosis2 = parent1_meiosis2[0 : len(surv)]
 
+	#PARENT2's chromosomes
 
+	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
 
+	parent2_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
+	parent2_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
 
+	parent2_overall = np.stack(parent2_chrom1, parent2_chrom2) # chrom1 and 2 of parent1 from pop1
 
+	#PARENT2 - MEIOSIS 1 (1st gamete)
 
-	global pop1_chrom1
-	global pop1_chrom2
-
-	global pop2_chrom1
-	global pop2_chrom2
-
-	# CROSSING OVER FOR POP1
-
-	x = int(np.random.randint(low = 0, high = len(pop1_chrom1), size = 1)) # gives a random number between 0 and len(pop1_chrom1), picks the breaking point ion the chromosome for CO
+	parent1_meiosis1 = [] #creates an empty list
+	np.array(parent1_meiosis1)
 	
-	pop1_chrom1_break1 = pop1_chrom1[x : len(pop1_chrom1)]
-	pop1_chrom1_break2 = pop1_chrom1[0 : x]
+	v = 0 
+	
+	while v < len(surv): #loop over the number of loci 
+		y = int(np.random.randint(2, size = 1)) # pick a random number, 0 or 1 
+			
+			if y == 0: # y == 0 means pick the first parent's genotype for the locus 
+				parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom1[v : v+1])
 
-	pop1_chrom2_break1 = pop1_chrom2[x : len(pop1_chrom2)]
-	pop1_chrom2_break2 = pop1_chrom2[0 : x]
+			else: 
+				parent2_meiosis1 = np.append(parent2_meiosis1, parent2_chrom2[v : v+1])
 
-	pop1_chrom1 = np.append(pop1_chrom1_break1, pop2_chrom2_break2) # pairs up the two parts from different chromosomes
-	pop1_chrom2 = np.append(pop1_chrom2_break2, pop1_chrom1_break1) # pairs up the remaining parts of the two chromosomes 
+			v += 1 
 
-	# CROSSING OVER FOR POP2
+	#PARENT2 - MEIOSIS 2 (2nd gamete)
 
-	y = int(np.random.randint(low = 0, high = len(pop2_chrom1), size = 1))
+	parent2_meiosis2 = []
+	np.array(parent2_meiosis2)
 
-	pop2_chrom1_break1 = pop2_chrom1[x : len(pop2_chrom1)]
-	pop2_chrom1_break2 = pop2_chrom1[0 : y]
-
-	pop2_chrom2_break1 = pop2_chrom2[x : len(pop2_chrom2)]
-	pop2_chrom2_break2 = pop2_chrom2[0 : y]
-
-	pop2_chrom1 = np.append(pop2_chrom1_break1, pop2_chrom2_break2) # pairs up the two parts from different chromosomes
-	pop2_chrom2 = np.append(pop2_chrom2_break2, pop2_chrom1_break1) # pairs up the remaining parts of the two chromosomes 
+	for z in parent1_meiosis1:  
+		z = 0 
+		while z < len(surv):
+			if parent2_meiosis1[z] == 0:
+				parent2_meiosis2 = np.append(parent2_meiosis2, 1)
+			elif parent2_meiosis1[z] == 1:
+				parent2_meiosis2 = np.append(parent2_meiosis2, 0)
+			z = z + 1
+	
+	parent2_meiosis2 = parent1_meiosis2[0 : len(surv)]
 
 	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
 
 	l = int(np.random.randint(low = 0, high = 4)) # randomly picks 0, 1, 2, 3 to randomly generate offsptring out of 4 possibilities 
 
 	if l == 0:
-		off = np.stack((pop1_chrom1, pop2_chrom2), axis = 0)
+		off = np.stack((parent1_meiosis1, parent2_meiosis1), axis = 0)
 	
 	elif l == 1:
-		off = np.stack((pop1_chrom2, pop2_chrom1), axis = 0)
+		off = np.stack((parent1_meiosis1, parent2_meiosis2), axis = 0)
 	
 	elif l == 2:
-		off = np.stack((pop1_chrom1, pop2_chrom1), axis = 0)
+		off = np.stack((parent1_meiosis2, parent2_meiosis1), axis = 0)
 	
 	else:	
-		off = np.stack((pop1_chrom2, pop2_chrom2), axis = 0)
+		off = np.stack((parent1_meiosis2, parent2_meiosis2), axis = 0)
 
 	return off # we made the offspring, now they will act as parents and we will create mutations in them. 
 
@@ -142,15 +164,6 @@ def recomb(surv):
 	# off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
 	# off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
 	# return off
-
-
-	pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
-	rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
-	rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
-	off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
-	off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
-	off = np.append(off_1, off_2, axis=0) #each product of meiosis
-	return off
 
 
 def mutate(off, u, alpha, n, mut):
