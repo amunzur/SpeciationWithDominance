@@ -53,37 +53,50 @@ def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
-	
-	#RECOMBINATION IN POP1
 
-	# Randomly pick parent1 from pop1
-	x = int(np.random.randint(low = 0, high = len(pop1_chrom1), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
+	# crossing over within diploid parents to make gametes
 
-	parent1_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
-	parent1_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
-	parent1_overall = np.stack((parent1_chrom1, parent1_chrom2), axis = 1) # chrom1 and 2 of parent1 from pop1
+
+	# pairing of parents
+
+
+	# shuffle the gametes into new diploid individuals
+
+
+	# output off array (matrix)
+
+
+	# Randomly pick parent1 from surv
+	x = int(np.random.randint(low = 0, high = np.shape(surv[1])[0], size = 1)) # gives a random number between 0 and number of rows of surv. this is parent1 in pair1
+
+	surv_all_chrom1 = surv[0] # collection of chrom1 of all individuals in surv
+	surv_all_chrom2 = surv[1] # collection of chrom2 of all individuals in surv
+
+	parent1_chrom1 = surv[0][x] # pick the xth row in the first element of surv (chrom1)
+	parent1_chrom2 = surv[1][x] # pick the xth row in the second element of surv (chrom2)
+	parent1_stacked = np.stack((parent1_chrom1, parent1_chrom2)) # chrom1 and 2 of parent1 from surv 
 
 	#PARENT1 - recombination
 
-	parent1_overall = take_along_axis(parent1_overall, idx, axis = 1) # update parent1_overall after recombination
+	parent1_stacked = shuffle_along_axis(parent1_stacked, axis = 1) # update parent1_stacked after recombination
 
-	parent1_meiosis1 = np.delete(parent1_overall, 1, 1) # this deletes the 1st coloumn, rest is meiosis1 
-	parent1_meiosis2 = np.delete(parent1_overall, 0, 1) # this deletes the 0th coloumn, rest is meiosis2
+	parent1_meiosis1 = np.delete(parent1_stacked, 1, 0) # this deletes the 1st row, rest is meiosis1 
+	parent1_meiosis2 = np.delete(parent1_stacked, 0, 0) # this deletes the 0th row, rest is meiosis2
 
-	#Randomly pick parent2 from pop1
+	#Randomly pick parent2 from surv
 
-	x = int(np.random.randint(low = 0, high = len(surv), size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
+	x = int(np.random.randint(low = 0, high = np.shape(surv[1])[0], size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
 
-	parent2_chrom1 = pop1_chrom1[[x], :] # pick the random parent's 1st chromosome 
-	parent2_chrom2 = pop1_chrom2[[x], :] # pick the random parent's 2nd chromosome
-	parent2_overall = np.stack((parent2_chrom1, parent2_chrom2), axis = 1) # chrom1 and 2 of parent2 from pop1
+	parent2_chrom1 = surv[0][x]
+	parent2_chrom2 = surv[1][x]
+	parent2_stacked = np.stack((parent2_chrom1, parent2_chrom2)) 
 
 	#PARENT2 - recombination 
 
-	parent2_overall = take_along_axis(parent2_overall, idx, axis = 1) # update parent2_overall after recombination
+	parent2_stacked = shuffle_along_axis(parent2_stacked, axis = 1) # update parent2_stacked after recombination
 
-	parent2_meiosis1 = np.delete(parent2_overall, 1, 1) # this deletes the 1st coloumn, rest is meiosis1 
-	parent2_meiosis2 = np.delete(parent2_overall, 0, 1) # this deletes the 0th coloumn, rest is meiosis2
+	parent2_meiosis1 = np.delete(parent2_stacked, 1, 0) # this deletes the 1st coloumn, rest is meiosis1 
+	parent2_meiosis2 = np.delete(parent2_stacked, 0, 0) # this deletes the 0th coloumn, rest is meiosis2
 
 	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
 
@@ -108,7 +121,7 @@ def recomb(surv):
 	#pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
 	# (int(len(surv)/2) = number of rows, each row is a parent. what you have in the row is the genotype of the parent (?)
 	# 2 = number of coloumns
-	# rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
+	#  #from which parent each offspring inherits each allele (free recombination, fair transmission)
 	# rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
 	# off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
 	# off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
@@ -249,8 +262,13 @@ def main():
 					while rep < nreps:
 
 						#found identical populations
-						popfound = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
-						mutfound = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
+						popfound1 = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
+						popfound2 = np.array([[1]] * N_adapt) 
+						popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
+
+						mutfound1 = np.array([[0]] * n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
+						mutfound2 = np.array([[0]] * n)
+						mutfound = np.column_stack((mutfound1, mutfound2))
 
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
@@ -284,10 +302,16 @@ def main():
 
 							# wright-fisher (multinomial) sampling
 							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen, drawing samples from a multinomial ditribution
-							# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen 
-							off1 = np.repeat(pop1_overall, parents1, axis=0) # offspring genotypes of pop1 
+							# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen. if you are more fit, you are chosen more often. 
+							
+							off1_chrom1 = np.repeat(pop1_overall, parents1, axis=0) 
+							off1_chrom2 = np.repeat(pop1_overall, parents1, axis=0)
+							off1 = [off1_chrom1, off1_chrom2] 
+							
 							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
-							off2 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes of pop2
+							off2_chrom1 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes of pop2
+							off2_chrom2 = np.repeat(pop2_overall, parents2, axis=0)
+							off2 = [off2_chrom1, off2_chrom2]
 
 							# mating and recombination
 							off1 = recomb(off1)
