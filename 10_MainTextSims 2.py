@@ -283,7 +283,8 @@ def main():
 							w2 = fitness(phenos2, theta2, sigma_adapt)
 
 							# wright-fisher (multinomial) sampling
-							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen
+							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen, drawing samples from a multinomial ditribution
+							# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen 
 							off1 = np.repeat(pop1_overall, parents1, axis=0) # offspring genotypes of pop1 
 							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
 							off2 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes of pop2
