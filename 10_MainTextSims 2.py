@@ -54,10 +54,30 @@ def recomb(surv):
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
 
-	# crossing over within diploid parents to make gametes
-
-
+	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
+	surv_stacked = np.append(surv[0], surv[1], axis = 1) 
+	
+	# loop over the number of rows and shuffle each row independently
+	x = 0 
+	while x < np.shape(surv_stacked)[1]: # while x is less than the number of rows
+		arr2 = np.random.permutation(arr[x])
+		x += 1
+		np.array(surv_stacked)
+   
 	# pairing of parents
+	pairs = np.resize(np.random.choice(len(surv_stacked), size=len(surv_stacked), replace=False), (int(len(surv_stacked)/2), 2))
+
+	# separate the chromosomes again
+	surv_chrom1 = np.split(surv_stacked, int((np.shape(surv_stacked)[1] / 2)), axis = 1)[0] #first half of the surv_stacked array
+	surv_chrom2 = np.split(surv_stacked, int((np.shape(surv_stacked)[1] / 2)), axis = 1)[1] #second half of the surv_stacked array
+	
+	#determine the gamates of parents 
+	parent1_meiosis1 = surv_chrom1[pairs[0]]
+	parent1_meiosis2 = surv_chrom2[pairs[0]]
+
+	parent2_meiosis1 = surv_chrom1[pairs[1]]
+	parent2_meiosis2 = surv_chrom2[pairs[1]]
+
 
 
 	# shuffle the gametes into new diploid individuals
@@ -118,10 +138,8 @@ def recomb(surv):
 
 
 	# ORIGINAL CODE: 
-	#pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
-	# (int(len(surv)/2) = number of rows, each row is a parent. what you have in the row is the genotype of the parent (?)
-	# 2 = number of coloumns
-	#  #from which parent each offspring inherits each allele (free recombination, fair transmission)
+	# pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
+	# rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
 	# rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
 	# off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
 	# off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
