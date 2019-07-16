@@ -55,21 +55,24 @@ def recomb(surv):
 	"""
 
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, 4) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci 
+	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, 4) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 	
 	#recombination 
 	c = np.array([0,0,0,0,]).reshape([1, 4]) # create a random array to save the results of each loop
 
 	x = 0
-	while x < 21:
+	while x < (N_adapts * 2 + 1): 
+		
 		b = shuffle_along_axis(surv_stacked[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
-		surv_stacked = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
+		c = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
 		x+=2
 
-	surv_stacked = surv_stacked[1:(N_adapts + 1)] #remove the c from the top of the array, update surv_stacked accordingly 
+	surv_stacked = c[1:(N_adapts * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly 
 
 	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals 
 	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 
+
+	surv_stacked = np.hstack((surv_chrom1, surv_chrom2)) #this horizontally places chrom1 and chrom2. each row is chrom1 and chrom2 of an individual. 
 	
 	# pick random pairs of parents 
 	pairs = np.resize(np.random.choice(len(surv_stacked), size=len(surv_stacked), replace=False), (int(len(surv_stacked)/2), 2))
@@ -81,29 +84,31 @@ def recomb(surv):
 	parent2_meiosis1 = surv_chrom1[pairs[:, 1]]
 	parent2_meiosis2 = surv_chrom2[pairs[:, 1]]
 
-	# shuffle the gametes into new diploid individuals
-
-
-	# output off array (matrix)
+	#shuffle the gametes (shuffle the rows) 
+	np.random.shuffle(parent1_meiosis1) 
+	np.random.shuffle(parent1_meiosis2)
+	np.random.shuffle(parent2_meiosis1)
+	np.random.shuffle(parent2_meiosis2)
 
 
 	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
 
-	l = int(np.random.randint(low = 0, high = 4)) # randomly picks 0, 1, 2, 3 to randomly generate offsptring out of 4 possibilities 
+	l = int(np.random.randint(low = 0, high = 2)) # randomly picks 0 or 1 to generate the offspring 
 
 	if l == 0:
-		off = np.stack((parent1_meiosis1, parent2_meiosis1), axis = 1)
-	
-	elif l == 1:
-		off = np.stack((parent1_meiosis1, parent2_meiosis2), axis = 1)
-	
-	elif l == 2:
-		off = np.stack((parent1_meiosis2, parent2_meiosis1), axis = 1)
-	
-	else:	
-		off = np.stack((parent1_meiosis2, parent2_meiosis2), axis = 1)
+		off_a = np.stack((parent1_meiosis1, parent2_meiosis1), axis = 1)
+		off_b = np.stack((parent1_meiosis1, parent2_meiosis2), axis = 1)
 
-	return off # we made the offspring, now they will act as parents and we will create mutations in them. 
+	else: 
+		off_a = np.stack((parent1_meiosis2, parent2_meiosis1), axis = 1)
+		off_b = np.stack((parent1_meiosis2, parent2_meiosis2), axis = 1)
+
+	off = np.hstack((off_a, off_b)) #horizontally add off_a and off_b. each row is one in
+
+	return off 
+	
+
+	# we made the offspring, now they will act as parents and we will create mutations in them. 
 
 
 	# ORIGINAL CODE: 
