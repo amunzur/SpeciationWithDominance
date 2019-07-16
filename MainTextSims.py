@@ -55,68 +55,37 @@ def recomb(surv):
 	"""
 
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.append(surv[0], surv[1], axis = 1) 
+	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, 4) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci 
 	
-	# loop over the number of rows and shuffle each row independently
-	x = 0 
-	while x < np.shape(surv_stacked)[1]: # while x is less than the number of rows
-		arr2 = np.random.permutation(arr[x])
-		x += 1
-		np.array(surv_stacked)
-   
-	# pairing of parents
+	#recombination 
+	c = np.array([0,0,0,0,]).reshape([1, 4]) # create a random array to save the results of each loop
+
+	x = 0
+	while x < 21:
+		b = shuffle_along_axis(surv_stacked[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
+		surv_stacked = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
+		x+=2
+
+	surv_stacked = surv_stacked[1:(N_adapts + 1)] #remove the c from the top of the array, update surv_stacked accordingly 
+
+	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals 
+	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 
+	
+	# pick random pairs of parents 
 	pairs = np.resize(np.random.choice(len(surv_stacked), size=len(surv_stacked), replace=False), (int(len(surv_stacked)/2), 2))
 
-	# separate the chromosomes again
-	surv_chrom1 = np.split(surv_stacked, int((np.shape(surv_stacked)[1] / 2)), axis = 1)[0] #first half of the surv_stacked array
-	surv_chrom2 = np.split(surv_stacked, int((np.shape(surv_stacked)[1] / 2)), axis = 1)[1] #second half of the surv_stacked array
-	
 	#determine the gamates of parents 
-	parent1_meiosis1 = surv_chrom1[pairs[0]]
-	parent1_meiosis2 = surv_chrom2[pairs[0]]
+	parent1_meiosis1 = surv_chrom1[pairs[:, 0]] #pick the chrom1 of the parents (pick the related rows, 0th element of pairs )
+	parent1_meiosis2 = surv_chrom2[pairs[:, 0]]
 
-	parent2_meiosis1 = surv_chrom1[pairs[1]]
-	parent2_meiosis2 = surv_chrom2[pairs[1]]
-
-
+	parent2_meiosis1 = surv_chrom1[pairs[:, 1]]
+	parent2_meiosis2 = surv_chrom2[pairs[:, 1]]
 
 	# shuffle the gametes into new diploid individuals
 
 
 	# output off array (matrix)
 
-
-	# Randomly pick parent1 from surv
-	x = int(np.random.randint(low = 0, high = np.shape(surv[1])[0], size = 1)) # gives a random number between 0 and number of rows of surv. this is parent1 in pair1
-
-	surv_all_chrom1 = surv[0] # collection of chrom1 of all individuals in surv
-	surv_all_chrom2 = surv[1] # collection of chrom2 of all individuals in surv
-
-	parent1_chrom1 = surv[0][x] # pick the xth row in the first element of surv (chrom1)
-	parent1_chrom2 = surv[1][x] # pick the xth row in the second element of surv (chrom2)
-	parent1_stacked = np.stack((parent1_chrom1, parent1_chrom2)) # chrom1 and 2 of parent1 from surv 
-
-	#PARENT1 - recombination
-
-	parent1_stacked = shuffle_along_axis(parent1_stacked, axis = 1) # update parent1_stacked after recombination
-
-	parent1_meiosis1 = np.delete(parent1_stacked, 1, 0) # this deletes the 1st row, rest is meiosis1 
-	parent1_meiosis2 = np.delete(parent1_stacked, 0, 0) # this deletes the 0th row, rest is meiosis2
-
-	#Randomly pick parent2 from surv
-
-	x = int(np.random.randint(low = 0, high = np.shape(surv[1])[0], size = 1)) # gives a random number between 0 and len(pop1_chrom1). this is parent1 in pair1
-
-	parent2_chrom1 = surv[0][x]
-	parent2_chrom2 = surv[1][x]
-	parent2_stacked = np.stack((parent2_chrom1, parent2_chrom2)) 
-
-	#PARENT2 - recombination 
-
-	parent2_stacked = shuffle_along_axis(parent2_stacked, axis = 1) # update parent2_stacked after recombination
-
-	parent2_meiosis1 = np.delete(parent2_stacked, 1, 0) # this deletes the 1st coloumn, rest is meiosis1 
-	parent2_meiosis2 = np.delete(parent2_stacked, 0, 0) # this deletes the 0th coloumn, rest is meiosis2
 
 	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
 
