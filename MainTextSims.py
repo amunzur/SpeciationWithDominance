@@ -58,7 +58,7 @@ def recomb(surv):
 	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, 4) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 	
 	#recombination 
-	c = np.array([0,0,0,0,]).reshape([1, 4]) # create a random array to save the results of each loop
+	c = np.array([0,0,0,0]).reshape([1, 4]) # create a random array to save the results of each loop
 
 	x = 0
 	while x < (N_adapts * 2 + 1): 
@@ -69,8 +69,8 @@ def recomb(surv):
 
 	surv_stacked = c[1:(N_adapts * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly 
 
-	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals 
-	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 
+	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals, both parent1 and parent2  
+	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 of N_adapts number of individuals, both parent1 and parent2 
 
 	surv_stacked = np.hstack((surv_chrom1, surv_chrom2)) #this horizontally places chrom1 and chrom2. each row is chrom1 and chrom2 of an individual. 
 	
@@ -91,21 +91,21 @@ def recomb(surv):
 	np.random.shuffle(parent2_meiosis2)
 
 
-	# RANDOMLY PAIR THE PARENTAL CHROMOSOMES TO MAKE THE OFFSRPING 
+	# Randomly pair the parents to make the offspring 
 
-	l = int(np.random.randint(low = 0, high = 2)) # randomly picks 0 or 1 to generate the offspring 
+	l = int(np.random.randint(low = 0, high = 2)) # randomly picks 0 or 1 to generate the offspring. 
 
 	if l == 0:
-		off_a = np.stack((parent1_meiosis1, parent2_meiosis1), axis = 1)
-		off_b = np.stack((parent1_meiosis1, parent2_meiosis2), axis = 1)
+		off_a = np.hstack((parent1_meiosis1, parent2_meiosis1)) #this horizontally adds meiosis1 and meiosis2. each row is one ind with 2 chromosomes 
+		off_b = np.hstack((parent1_meiosis1, parent2_meiosis2))
 
 	else: 
-		off_a = np.stack((parent1_meiosis2, parent2_meiosis1), axis = 1)
-		off_b = np.stack((parent1_meiosis2, parent2_meiosis2), axis = 1)
+		off_a = np.hstack((parent1_meiosis2, parent2_meiosis1))
+		off_b = np.hstack((parent1_meiosis2, parent2_meiosis2))
 
-	off = np.hstack((off_a, off_b)) #horizontally add off_a and off_b. each row is one in
+	off = np.vstack((off_a, off_b)) #vertically add off_a and off_b
 
-	return off 
+	return off
 	
 
 	# we made the offspring, now they will act as parents and we will create mutations in them. 
