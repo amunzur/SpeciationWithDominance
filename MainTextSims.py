@@ -55,10 +55,10 @@ def recomb(surv):
 	"""
 
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, 4) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, np.size(off1, 1)) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 	
 	#recombination 
-	c = np.array([0,0,0,0]).reshape([1, 4]) # create a random array to save the results of each loop
+	c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
 
 	x = 0
 	while x < (N_adapts * 2 + 1): 
@@ -67,12 +67,12 @@ def recomb(surv):
 		c = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
 		x+=2
 
-	surv_stacked = c[1:(N_adapts * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly 
+	surv_stacked = c[1:(N_adapts * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly. chrom1, chrom2, chrom1, chrom2 seklinde devam ediyor rowlar. 
 
-	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals, both parent1 and parent2  
+	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals after shuffling, both parent1 and parent2. number of rows = N_adapts, number of columns = number of loci   
 	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 of N_adapts number of individuals, both parent1 and parent2 
 
-	surv_stacked = np.hstack((surv_chrom1, surv_chrom2)) #this horizontally places chrom1 and chrom2. each row is chrom1 and chrom2 of an individual. 
+	surv_stacked = np.hstack((surv_chrom1, surv_chrom2)) #this horizontally places chrom1 and chrom2. each row is chrom1 and chrom2 of an individual. left part = chrom1, right part = chrom2
 	
 	# pick random pairs of parents 
 	pairs = np.resize(np.random.choice(len(surv_stacked), size=len(surv_stacked), replace=False), (int(len(surv_stacked)/2), 2))
@@ -91,8 +91,8 @@ def recomb(surv):
 	off1_chroms = np.random.randint(2, size=(len(pairs), 2)) # from which chrom to draw for off1 [p1, p2] #gives an array of 1 and 0. number of rows = number of rows of pairs. number of columns = number of rows of surv_stacked
 	off2_chroms = abs(1-off1_chroms) #opposite of rand for the other offspring (the other offspring inherits the alleles from the other parent for the related loci)
 
-	off_chrom1 = np.split((np.hstack((off1_chroms[:, 0], off2_chroms[:, 0])).reshape(N_adapts,1)), N_adapts/2) #chrom1 of all offspring cumulated, the split into N_adapts/2 groups 
-	off_chrom2 = np.split((np.hstack((off1_chroms[:, 1], off2_chroms[:, 1])).reshape(N_adapts,1)), N_adapts/2) #chrom2 of all offspring cumulated 
+	off_chrom1 = np.split((np.hstack((off1_chroms[:, 0], off2_chroms[:, 0])).reshape(N_adapts, 1)), N_adapts / 2) #chrom1 of all offspring cumulated, the split into N_adapts/2 groups 
+	off_chrom2 = np.split((np.hstack((off1_chroms[:, 1], off2_chroms[:, 1])).reshape(N_adapts, 1)), N_adapts / 2) #chrom2 of all offspring cumulated 
 
 	#create the related indices 
 	even_nums = np.arange(0, (N_adapts - 1), 2) #produce a list of even numbers from 0 to Nadapts - 1, not including the stop. 
@@ -100,7 +100,7 @@ def recomb(surv):
 	off_chrom1_index = np.concatenate(np.sum((off_chrom1, even_nums), axis = 0)) #add the variables with same indices, column-wise. then reformat into the shape of (N_adapts, 1)
 	off_chrom2_index = np.concatenate(np.sum((off_chrom2, even_nums), axis = 0)) 
 
-	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(10,8) #stack the same rows from two arrays together and reformat. each row is one offspring. 
+	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(N_adapts, (np.size(off1, 1) * 2)) #stack the same rows from two arrays together and reformat. each row is one offspring. 
 	
 	return off
 
