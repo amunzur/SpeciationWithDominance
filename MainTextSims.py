@@ -84,45 +84,35 @@ def recomb(surv):
 	parent2_gamete1 = surv_chrom1[pairs[:, 1]]
 	parent2_gamete2 = surv_chrom2[pairs[:, 1]]
 
+	parent1 = np.vstack((parent1_gamete1, parent1_gamete2)) #vertically add the two gametes. this gives overall genotype of parents. each row is one gamete 
+	parent2 = np.vstack((parent2_gamete1, parent2_gamete2))
+
 	#from which parent offsprings inherit each allele
-	rand = np.random.randint(2, size=(len(pairs), len(surv[0]))) #gives an array of 1 and 0. number of rows = number of rows of pairs. number of columns = number of rows of surv_stacked
-	rand2 = 1-rand #opposite of rand for the other offspring (the other offspring inherits the alleles from the other parent for the related loci)
+	off1_chroms = np.random.randint(2, size=(len(pairs), 2)) # from which chrom to draw for off1 [p1, p2] #gives an array of 1 and 0. number of rows = number of rows of pairs. number of columns = number of rows of surv_stacked
+	off2_chroms = abs(1-off1_chroms) #opposite of rand for the other offspring (the other offspring inherits the alleles from the other parent for the related loci)
 
-	#shuffle the gametes (shuffle the rows) 
-	np.random.shuffle(parent1_gamete1) 
-	np.random.shuffle(parent1_gamete2)
-	np.random.shuffle(parent2_gamete1)
-	np.random.shuffle(parent2_gamete2)
+	off_chrom1 = np.split((np.hstack((off1_chroms[:, 0], off2_chroms[:, 0])).reshape(N_adapts,1)), N_adapts/2) #chrom1 of all offspring cumulated, the split into N_adapts/2 groups 
+	off_chrom2 = np.split((np.hstack((off1_chroms[:, 1], off2_chroms[:, 1])).reshape(N_adapts,1)), N_adapts/2) #chrom2 of all offspring cumulated 
 
+	#create the related indices 
+	even_nums = np.arange(0, (N_adapts - 1), 2) #produce a list of even numbers from 0 to Nadapts - 1, not including the stop. 
 
-	# Randomly pair the parents to make the offspring 
+	off_chrom1_index = np.concatenate(np.sum((off_chrom1, even_nums), axis = 0)) #add the variables with same indices, column-wise. then reformat into the shape of (N_adapts, 1)
+	off_chrom2_index = np.concatenate(np.sum((off_chrom2, even_nums), axis = 0)) 
 
-	l = int(np.random.randint(low = 0, high = 2)) # randomly picks 0 or 1 to generate the offspring. 
-
-	if l == 0:
-		off_a = np.hstack((parent1_meiosis1, parent2_meiosis1)) #this horizontally adds meiosis1 and meiosis2. each row is one ind with 2 chromosomes 
-		off_b = np.hstack((parent1_meiosis1, parent2_meiosis2))
-
-	else: 
-		off_a = np.hstack((parent1_meiosis2, parent2_meiosis1))
-		off_b = np.hstack((parent1_meiosis2, parent2_meiosis2))
-
-	off = np.vstack((off_a, off_b)) #vertically add off_a and off_b
-
-	return off
+	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(10,8) #stack the same rows from two arrays together and reformat. each row is one offspring. 
 	
-
-	# we made the offspring, now they will act as parents and we will create mutations in them. 
+	return off
 
 
 	# ORIGINAL CODE: 
-	pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
-	rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
-	rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
-	off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
-	off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
-	off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
-	return off
+	# pairs = np.resize(np.random.choice(len(surv), size=len(surv), replace=False), (int(len(surv)/2), 2)) #random mate pairs (each mates at most once and not with self)
+	# rand2 = np.random.randint(2, size=(len(pairs), len(surv[0]))) #from which parent each offspring inherits each allele (free recombination, fair transmission)
+	# rec = np.resize(np.append(rand2, 1-rand2, axis=1),(len(rand2), 2, len(rand2[0]))) #reshape
+	# off_1 = np.sum(surv[pairs] * rec, axis=1) #one product of meiosis
+	# off_2 = np.sum(surv[pairs] * (1-rec), axis=1) #other product of meiosis
+	# off = np.append(off_1, off_2, axis=0) #each product of meiosis, diploid offspring
+	# return off
 
 
 def mutate(off, u, alpha, n, mut):
