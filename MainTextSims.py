@@ -91,14 +91,24 @@ def recomb(surv):
 	off1_chroms = np.random.randint(2, size=(len(pairs), 2)) # from which chrom to draw for off1 [p1, p2] #gives an array of 1 and 0. number of rows = number of rows of pairs. number of columns = number of rows of surv_stacked
 	off2_chroms = abs(1-off1_chroms) #opposite of rand for the other offspring (the other offspring inherits the alleles from the other parent for the related loci)
 
-	off_chrom1 = np.split((np.hstack((off1_chroms[:, 0], off2_chroms[:, 0])).reshape(N_adapts, 1)), N_adapts / 2) #chrom1 of all offspring cumulated, the split into N_adapts/2 groups 
-	off_chrom2 = np.split((np.hstack((off1_chroms[:, 1], off2_chroms[:, 1])).reshape(N_adapts, 1)), N_adapts / 2) #chrom2 of all offspring cumulated 
+	off_chrom1 = np.stack((off1_chroms[:, 0], off2_chroms[:, 0]), axis = 1).reshape(N_adapts, 1)
+	off_chrom2 = np.stack((off1_chroms[:, 1], off2_chroms[:, 1]), axis = 1).reshape(N_adapts, 1)
+
+
+
+	# off1_chroms[:, 0].reshape(3, 1)
+	# off_chrom1 = np.split((np.hstack((off1_chroms[:, 0], off2_chroms[:, 0])).reshape(N_adapts, 1)), N_adapts / 2) #chrom1 of all offspring cumulated, the split into N_adapts/2 groups 
+	# off_chrom2 = np.split((np.hstack((off1_chroms[:, 1], off2_chroms[:, 1])).reshape(N_adapts, 1)), N_adapts / 2) #chrom2 of all offspring cumulated 
 
 	#create the related indices 
-	even_nums = np.arange(0, (N_adapts - 1), 2) #produce a list of even numbers from 0 to Nadapts - 1, not including the stop. 
+	even_nums = np.repeat(np.arange(0, (N_adapts - 1), 2), 2).reshape(N_adapts, 1) #produce a list of even numbers from 0 to Nadapts - 1, not including the stop. 
 
-	off_chrom1_index = np.concatenate(np.sum((off_chrom1, even_nums), axis = 0)) #add the variables with same indices, column-wise. then reformat into the shape of (N_adapts, 1)
-	off_chrom2_index = np.concatenate(np.sum((off_chrom2, even_nums), axis = 0)) 
+	off_chrom1_index = off_chrom1 + even_nums.reshape(N_adapts, 1)
+	off_chrom2_index = off_chrom2 + even_nums.reshape(N_adapts, 1)
+
+
+	# off_chrom1_index = np.concatenate(np.sum((off_chrom1, even_nums), axis = 0)) #add the variables with same indices, column-wise. then reformat into the shape of (N_adapts, 1)
+	# off_chrom2_index = np.concatenate(np.sum((off_chrom2, even_nums), axis = 0)) 
 
 	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(N_adapts, (np.size(off1, 1) * 2)) #stack the same rows from two arrays together and reformat. each row is one offspring. 
 	
