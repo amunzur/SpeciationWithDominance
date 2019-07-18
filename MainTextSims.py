@@ -54,7 +54,7 @@ def recomb(surv):
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.stack((surv[0], surv[1]), axis = 1).reshape(N_adapts * 2, np.shape(surv[0])[1]) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+	surv_stacked = np.stack((surv[0], surv[1]), axis = 1).reshape(N_adapts * 2, int(surv[0].shape[1])) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 	
 	#recombination 
 	c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
@@ -118,9 +118,6 @@ def mutate(off, u, alpha, n, mut):
 	"""
 	This function creates mutations and updates population
 	"""
-
-
-	#ORIGINAL CODE
 	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of off random numbers as between 0 and 1) size = number of columns of off (number of individuals)
 	nmuts = sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations. 
 	whomuts = np.where(rand3 < u_adapt) #indices of mutants. each refer to the index of the individuals in the off matrix. 
@@ -137,11 +134,6 @@ def mutate(off, u, alpha, n, mut):
 	#update pop_chrom2
 	zero = np.zeros(N_adapts * np.shape(added_muts)[1]).reshape(N_adapts, np.shape(added_muts)[1]).astype(int) #create an array of zeros. rows: n_adapts columns: same as added_muts. chrom2 doesnt mutate, so we add the zeros array. 
 	pop_chrom2 = np.append(pop_chrom2, zero, axis = 1) #append zero array to chrom2
-
-
-
-
-
 
 	mut = np.append(mut, newmuts, axis=0) #append effect of new mutations to mutation list
 	return [pop, mut]
@@ -289,7 +281,7 @@ def main():
 							
 							off1_chrom1 = np.repeat(pop1_overall, parents1, axis=0) 
 							off1_chrom2 = np.repeat(pop1_overall, parents1, axis=0)
-							off1 = [off1_chrom1, off1_chrom2] 
+							off1 = [off1_chrom1, off1_chrom2]
 							
 							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
 							off2_chrom1 = np.repeat(pop2_overall, parents2, axis=0) # offspring genotypes of pop2
