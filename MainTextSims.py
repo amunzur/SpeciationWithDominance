@@ -53,9 +53,8 @@ def recomb(surv):
 	"""
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
-
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.stack((off1, off2), axis = 1).reshape(N_adapts * 2, np.size(off1, 1)) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+	surv_stacked = np.stack((surv[0], surv[1]), axis = 1).reshape(N_adapts * 2, np.shape(surv[0])[1]) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 	
 	#recombination 
 	c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
@@ -119,33 +118,31 @@ def mutate(off, u, alpha, n, mut):
 	"""
 	This function creates mutations and updates population
 	"""
-	
-
-
-	
-
-	# h == 0 #looping over all the loci in off 
-	# while h < len(off): 
-	# 	h +=1
-	# 	rand3 = np.random.uniform(size = len(off))
-	# 	off[off > rand3] = 1
-		
-
-
-	# 	if rand < np.random.uniform(size = 1) is True: #if the loci is likely to mutate
-
-
-
-
-
 
 
 	#ORIGINAL CODE
-	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of offxrandom numbers as between 0 and 1)
-	nmuts = sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations - u is the mutation probability per generation per genome - ancestor
-	whomuts = np.where(rand3 < u_adapt) #indices of mutants, meaning where they are 
-	newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd rows:nmuts coloumns=n 
-	pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants
+	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of off random numbers as between 0 and 1) size = number of columns of off (number of individuals)
+	nmuts = sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations. 
+	whomuts = np.where(rand3 < u_adapt) #indices of mutants. each refer to the index of the individuals in the off matrix. 
+	newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd (how far you from the mean) rows:nmuts coloumns=n. each pair is x and y coordinates. they tell you how far and which direction you go away from the origin 
+	
+	#pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants. from the identity array, only pick the rows of individuls that had a lower nmuts value than alpha. then append them next to the individuals themselves. 
+	pop_chrom1 = np.split(off, 2, axis = 1)[0] #split the off array into 2 column wise. left side chrom1, right is chrom2. 
+	pop_chrom2 = np.split(off, 2, axis = 1)[1]
+	
+	#update pop_chrom1
+	added_muts = np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]) #pick the rows of mutated individuals from the identity array
+	pop_chrom1 = np.append(pop_chrom1, added_muts, axis=1) #update pop_chrom1 by appending the mutation matrix
+
+	#update pop_chrom2
+	zero = np.zeros(N_adapts * np.shape(added_muts)[1]).reshape(N_adapts, np.shape(added_muts)[1]).astype(int) #create an array of zeros. rows: n_adapts columns: same as added_muts. chrom2 doesnt mutate, so we add the zeros array. 
+	pop_chrom2 = np.append(pop_chrom2, zero, axis = 1) #append zero array to chrom2
+
+
+
+
+
+
 	mut = np.append(mut, newmuts, axis=0) #append effect of new mutations to mutation list
 	return [pop, mut]
 
@@ -180,7 +177,7 @@ data_dir = 'data'
 
 N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
-u_adapt = 0.001 #mutation probability per generation per genome (0<u<1)
+u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [10] #selection strengths
 
 opt_dist = 1 #distance to optima
