@@ -60,13 +60,13 @@ def recomb(surv):
 	c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
 
 	x = 0
-	while x < (N_adapts * 2 + 1): 
+	while x < (N_adapts[0] * 2 + 1): 
 		
 		b = shuffle_along_axis(surv_stacked[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
 		c = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
 		x+=2
 
-	surv_stacked = c[1:(N_adapts * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly. chrom1, chrom2, chrom1, chrom2 seklinde devam ediyor rowlar. 
+	surv_stacked = c[1:(N_adapts[0] * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly. chrom1, chrom2, chrom1, chrom2 seklinde devam ediyor rowlar. 
 
 	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals after shuffling, both parent1 and parent2. number of rows = N_adapts, number of columns = number of loci   
 	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 of N_adapts number of individuals, both parent1 and parent2 
@@ -90,16 +90,16 @@ def recomb(surv):
 	off1_chroms = np.random.randint(2, size=(len(pairs), 2)) # from which chrom to draw for off1 [p1, p2] #gives an array of 1 and 0. number of rows = number of rows of pairs. number of columns = number of rows of surv_stacked
 	off2_chroms = abs(1-off1_chroms) #opposite of rand for the other offspring (the other offspring inherits the alleles from the other parent for the related loci)
 
-	off_chrom1 = np.stack((off1_chroms[:, 0], off2_chroms[:, 0]), axis = 1).reshape(N_adapts, 1)
-	off_chrom2 = np.stack((off1_chroms[:, 1], off2_chroms[:, 1]), axis = 1).reshape(N_adapts, 1)
+	off_chrom1 = np.stack((off1_chroms[:, 0], off2_chroms[:, 0]), axis = 1).reshape(N_adapts[0], 1)
+	off_chrom2 = np.stack((off1_chroms[:, 1], off2_chroms[:, 1]), axis = 1).reshape(N_adapts[0], 1)
 
 	#create the related indices 
-	even_nums = np.repeat(np.arange(0, (N_adapts - 1), 2), 2).reshape(N_adapts, 1) #produce a list of even numbers from 0 to Nadapts - 1, not including the stop. 
+	even_nums = np.repeat(np.arange(0, (N_adapts[0] - 1), 2), 2).reshape(N_adapts[0], 1) #produce a list of even numbers from 0 to Nadapts - 1, not including the stop. 
 
-	off_chrom1_index = off_chrom1 + even_nums.reshape(N_adapts, 1)
-	off_chrom2_index = off_chrom2 + even_nums.reshape(N_adapts, 1)
+	off_chrom1_index = off_chrom1 + even_nums.reshape(N_adapts[0], 1)
+	off_chrom2_index = off_chrom2 + even_nums.reshape(N_adapts[0], 1)
 
-	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(N_adapts, (np.size(off1, 1) * 2)) #stack the same rows from two arrays together and reformat. each row is one offspring. 
+	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(N_adapts[0], (np.size(off1_chroms, 1) * 2)) #stack the same rows from two arrays together and reformat. each row is one offspring. 
 	
 	return off
 
@@ -132,31 +132,50 @@ def mutate(off, u, alpha, n, mut):
 	pop_chrom1 = np.append(pop_chrom1, added_muts, axis=1) #update pop_chrom1 by appending the mutation matrix
 
 	#update pop_chrom2
-	zero = np.zeros(N_adapts * np.shape(added_muts)[1]).reshape(N_adapts, np.shape(added_muts)[1]).astype(int) #create an array of zeros. rows: n_adapts columns: same as added_muts. chrom2 doesnt mutate, so we add the zeros array. 
+	zero = np.zeros(N_adapts[0] * np.shape(added_muts)[1]).reshape(N_adapts[0], np.shape(added_muts)[1]).astype(int) #create an array of zeros. rows: n_adapts columns: same as added_muts. chrom2 doesnt mutate, so we add the zeros array. 
 	pop_chrom2 = np.append(pop_chrom2, zero, axis = 1) #append zero array to chrom2
 
 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
-	np.append(pop_chrom1, pop_chrom2, axis = 1)
+	pop = np.append(pop_chrom1, pop_chrom2, axis = 1)
 
-	mut = np.append(mut, newmuts, axis=0) #append effect of new mutations to mutation list
+	mut = np.vstack((mut.reshape(n), newmuts)) #append effect of new mutations to mutation list
+
 	return [pop, mut]
 
-def remove_muts(remove, remove_lost, pop, mut, mutfound):
+def remove_muts(pop, mut):
 	"""
 	This function creates mutations and updates population
 	"""
-	if remove_lost:
-		if remove == 'any':
-			keep = pop.any(axis=0)
-			mut = mut[keep]
-			pop = pop[:, keep]
-		elif remove == 'derived':
-			segregating = pop.any(axis=0)
-			ancestral = np.array(range(len(mut))) < len(mutfound)
-			keep = np.add(segregating, ancestral)
-			mut = mut[keep]
-			pop = pop[:, keep]
-	return [pop, mut]
+	#split the pop into chrom1 and chrom2. 
+	pop_chrom1 = np.split(pop, 2, axis = 1)[0]
+	pop_chrom2 = np.split(pop, 2, axis = 1)[1]
+
+	keep_pop_chrom1 = pop_chrom1.any(axis=0) #go through the columns of pop_chrom1 and determine if any column is all 0
+	keep_pop_chrom2 = pop_chrom2.any(axis=0)
+
+	keep = np.intersect1d(pop_chrom1_remove, pop_chrom2_remove) #find the indices where the two arrays have 0 in the same columns 
+
+	pop_chrom1 = pop_chrom1[:, keep] #update the chroms by removing the columns with lost mutations
+	pop_chrom2 = pop_chrom2[:, keep]
+	pop = np.hstack(pop_chrom1, pop_chrom2) #horizontally reattach the chromosomes and make the pop
+
+	mut = mut[keep] #remove the lost loci by removing the rows
+	
+	return[pop, mut]
+
+	#ORIGINAL CODE 
+	# if remove_lost:
+	# 	if remove == 'any':
+	# 		keep = pop.any(axis=0)
+	# 		mut = mut[keep]
+	# 		pop = pop[:, keep]
+	# 	# elif remove == 'derived':
+	# 	# 	segregating = pop.any(axis=0)
+	# 	# 	ancestral = np.array(range(len(mut))) < len(mutfound)
+	# 	# 	keep = np.add(segregating, ancestral)
+	# 	# 	mut = mut[keep]
+	# 	# 	pop = pop[:, keep]
+	# return [pop, mut]
 
 ######################################################################
 ##UNIVERSAL PARAMETERS##
@@ -170,7 +189,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = 1000 #number of diploid individuals (positive integer)
+N_adapts = [100] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [10] #selection strengths
