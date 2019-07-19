@@ -142,7 +142,13 @@ def mutate(off, u, alpha, n, mut):
 
 	return [pop, mut]
 
-def remove_muts(pop, mut):
+def which_index(pop):
+	return np.array([
+		i for i in range(len(pop))
+		if pop[i] == True
+	])
+
+def remove_muts(pop, mut): #here pop is the same thing as off
 	"""
 	This function creates mutations and updates population
 	"""
@@ -150,16 +156,21 @@ def remove_muts(pop, mut):
 	pop_chrom1 = np.split(pop, 2, axis = 1)[0]
 	pop_chrom2 = np.split(pop, 2, axis = 1)[1]
 
-	keep_pop_chrom1 = pop_chrom1.any(axis=0) #go through the columns of pop_chrom1 and determine if any column is all 0
-	keep_pop_chrom2 = pop_chrom2.any(axis=0)
+	keep_pop_chrom1 = np.array(pop_chrom1.any(axis=0)) #go through the columns of pop_chrom1 and determine if any column is all 0
+	keep_pop_chrom2 = np.array(pop_chrom2.any(axis=0))
 
-	keep = np.intersect1d(pop_chrom1_remove, pop_chrom2_remove) #find the indices where the two arrays have 0 in the same columns 
+	keep = np.intersect1d(which_index(keep_pop_chrom1), which_index(keep_pop_chrom2)) #find the indices where the two arrays have 0 in the same columns 
 
-	pop_chrom1 = pop_chrom1[:, keep] #update the chroms by removing the columns with lost mutations
-	pop_chrom2 = pop_chrom2[:, keep]
-	pop = np.hstack(pop_chrom1, pop_chrom2) #horizontally reattach the chromosomes and make the pop
+	if len(keep) == 0:
+		pop = np.hstack((pop_chrom1, pop_chrom2))
+		mut = mut 
 
-	mut = mut[keep] #remove the lost loci by removing the rows
+	else: 
+		pop_chrom1 = pop_chrom1[:, keep] #update the chroms by removing the columns with lost mutations
+		pop_chrom2 = pop_chrom2[:, keep]
+		pop = np.hstack((pop_chrom1, pop_chrom2)) #horizontally reattach the chromosomes and make the pop
+
+		mut = mut[keep] #remove the lost loci by removing the rows
 	
 	return[pop, mut]
 
@@ -200,8 +211,7 @@ n_angles = 3 #number of angles between optima to simulate (including 0 and 180) 
 
 maxgen = 50 #total number of generations populations adapt for
 
-remove_lost = True #If true, remove mutations that are lost (0 for all individuals)
-remove = 'derived' #.. any derived (not from ancestor) mutation that is lost 
+# dominance = ['no_dom', 'variable']
 
 ######################################################################
 ##PARAMETERS FOR HYBRIDS##
