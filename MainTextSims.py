@@ -54,7 +54,7 @@ def recomb(surv):
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.stack((surv[0], surv[1]), axis = 1).reshape(N_adapts * 2, int(surv[0].shape[1])) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+	surv_stacked = np.concatenate(np.stack((surv[0], surv[1]), axis = 1)) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 	
 	#recombination 
 	c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
@@ -135,6 +135,9 @@ def mutate(off, u, alpha, n, mut):
 	zero = np.zeros(N_adapts * np.shape(added_muts)[1]).reshape(N_adapts, np.shape(added_muts)[1]).astype(int) #create an array of zeros. rows: n_adapts columns: same as added_muts. chrom2 doesnt mutate, so we add the zeros array. 
 	pop_chrom2 = np.append(pop_chrom2, zero, axis = 1) #append zero array to chrom2
 
+	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
+	np.append(pop_chrom1, pop_chrom2, axis = 1)
+
 	mut = np.append(mut, newmuts, axis=0) #append effect of new mutations to mutation list
 	return [pop, mut]
 
@@ -167,7 +170,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = 1000 #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [10] #selection strengths
@@ -241,9 +244,7 @@ def main():
 						popfound2 = np.array([[1]] * N_adapt) 
 						popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-						mutfound1 = np.array([[0]] * n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
-						mutfound2 = np.array([[0]] * n)
-						mutfound = np.column_stack((mutfound1, mutfound2))
+						mutfound = np.array([[0]] * n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
 
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
