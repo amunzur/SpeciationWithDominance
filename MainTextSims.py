@@ -138,7 +138,7 @@ def mutate(off, u, alpha, n, mut):
 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
 	pop = np.append(pop_chrom1, pop_chrom2, axis = 1)
 
-	mut = np.vstack((mut.reshape(n), newmuts)) #append effect of new mutations to mutation list
+	muts = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
 
 	return [pop, mut]
 
@@ -273,7 +273,7 @@ def main():
 						popfound2 = np.array([[1]] * N_adapt) 
 						popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-						mutfound = np.array([[0]] * n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
+						mutfound = mut = np.zeros(n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
 
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
@@ -324,12 +324,12 @@ def main():
 
 
 							# mutation and population update
-							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
+							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1) #mutate_result[0] = pop,  mutate_result[1] = mut 
 							[pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
 							# remove lost mutations (all zero columns in pop)
-							[pop1_overall, mut1] = remove_muts(remove, remove_lost, pop1_overall, mut1, mutfound)
-							[pop2_overall, mut2] = remove_muts(remove, remove_lost, pop2_overall, mut2, mutfound)
+							[pop1_overall, mut1] = remove_muts(pop1_overall, mut1)
+							[pop2_overall, mut2] = remove_muts(pop2_overall, mut2)
 
 							# go to next generation
 							gen += 1
