@@ -171,6 +171,9 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 		pop = np.hstack((pop_chrom1, pop_chrom2)) #horizontally reattach the chromosomes and make the pop
 
 		mut = mut[keep] #remove the lost loci by removing the rows
+
+		#pop = mutate_result[0] it might be good to include these somewhere in the simulations if sth goes wrong 
+		#mut = mutate_result[1]
 	
 	return[pop, mut]
 
@@ -330,6 +333,10 @@ def main():
 							# remove lost mutations (all zero columns in pop)
 							[pop1_overall, mut1] = remove_muts(pop1_overall, mut1)
 							[pop2_overall, mut2] = remove_muts(pop2_overall, mut2)
+
+							#create the dominance coefficient array (h)
+							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
+							h = np.random.uniform(low = 0, high = 1, size = mut.shape[0]).reshape(mut.shape[0], 1)
 
 							# go to next generation
 							gen += 1
