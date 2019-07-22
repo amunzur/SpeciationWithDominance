@@ -281,11 +281,11 @@ def main():
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-						pop1_chrom1 = pop1 # genotype of 1st chromosome of pop1
-						pop1_chrom2 = pop1 # genotype of 2nd chromosome of pop1
+						pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
+						pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
 
-						pop2_chrom1 = pop2 # 1st chromosome of pop2
-						pop2_chrom2 = pop2 # 2nd chromosome of pop2
+						pop2_chrom1 = popfound2 # 1st chromosome of pop2
+						pop2_chrom2 = popfound2 # 2nd chromosome of pop2
 
 						# intitialize generation counter
 						gen = 0
@@ -298,8 +298,8 @@ def main():
 							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
 							# genotype to phenotype (diploid):
-							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop1 averaged
-							pop2_overall = ((pop2_chrom1 + pop1_chrom2) / 2) # two chromosomes of pop2 averaged
+							pop1_overall = np.hstack((pop1_chrom1, pop1_chrom2)) # two chromosomes of pop1 averaged
+							pop2_overall = np.hstack((pop2_chrom1, pop2_chrom2)) # two chromosomes of pop2 averaged
 
 							phenos1 = np.dot(pop1_overall, mut1)
 							phenos2 = np.dot(pop2_overall, mut2)
