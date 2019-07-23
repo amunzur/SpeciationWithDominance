@@ -99,7 +99,7 @@ def recomb(surv):
 	off_chrom1_index = off_chrom1 + even_nums.reshape(N_adapts[0], 1)
 	off_chrom2_index = off_chrom2 + even_nums.reshape(N_adapts[0], 1)
 
-	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(N_adapts[0], (np.size(off1_chroms, 1) * 2)) #stack the same rows from two arrays together and reformat. each row is one offspring. 
+	off = np.hstack((parent1[(off_chrom1_index)], parent2[(off_chrom2_index)])).reshape(N_adapts[0], (np.size(off1_chroms, 1))) #stack the same rows from two arrays together and reformat. each row is one offspring. 
 	
 	return off
 
@@ -138,7 +138,9 @@ def mutate(off, u, alpha, n, mut):
 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
 	pop = np.append(pop_chrom1, pop_chrom2, axis = 1)
 
-	muts = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
+	mut_mutate = np.zeros(n) #mut_mutate is the same as mut, just defining it here one more time 
+
+	muts = np.vstack((mut_mutate, newmuts)) #append effect of new mutations to mutation list
 
 	return [pop, mut]
 
@@ -276,10 +278,16 @@ def main():
 						popfound2 = np.array([[1]] * N_adapt) 
 						popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-						mutfound = mut = np.zeros(n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1 
+						mutfound = mut = np.zeros(n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
 
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
+
+						mut1_1 = np.split(mut1, 2, axis = 0)[0]
+						mut1_2 = np.split(mut1, 2, axis = 0)[0]
+
+						mut2_1 = np.split(mut2, 2, axis = 0)[0]
+						mut2_2 = np.split(mut2, 2, axis = 0)[0]
 
 						pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
 						pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
@@ -298,11 +306,16 @@ def main():
 							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
 							# genotype to phenotype (diploid):
-							pop1_overall = np.hstack((pop1_chrom1, pop1_chrom2)) # two chromosomes of pop1 averaged
-							pop2_overall = np.hstack((pop2_chrom1, pop2_chrom2)) # two chromosomes of pop2 averaged
+							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
+							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 
-							phenos1 = np.dot(pop1_overall, mut1)
-							phenos2 = np.dot(pop2_overall, mut2)
+							phenos1_1 = np.dot(pop1_overall, mut1_1)
+							phenos1_2 = np.dot(pop1_overall, mut1_2)
+							phenos1 = np.hstack((phenos1_1, phenos1_2)).reshape(N_adapts[0], 2)
+
+							phenos2_1 = np.dot(pop2_overall, mut2_1)
+							phenos2_2 = np.dot(pop2_overall, mut2_2)
+							phenos2 = np.hstack((phenos2_1, phenos2_2)).reshape(N_adapts[0], 2)
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
