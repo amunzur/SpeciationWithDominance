@@ -278,16 +278,16 @@ def main():
 						popfound2 = np.array([[1]] * N_adapt) 
 						popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-						mutfound = mut = np.zeros(n) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
+						mutfound = mut = [np.zeros(n).tolist()] #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
 
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-						mut1_1 = np.split(mut1, 2, axis = 0)[0]
-						mut1_2 = np.split(mut1, 2, axis = 0)[0]
+						# mut1_1 = np.split(mut1, 2, axis = 0)[0]
+						# mut1_2 = np.split(mut1, 2, axis = 0)[0]
 
-						mut2_1 = np.split(mut2, 2, axis = 0)[0]
-						mut2_2 = np.split(mut2, 2, axis = 0)[0]
+						# mut2_1 = np.split(mut2, 2, axis = 0)[0]
+						# mut2_2 = np.split(mut2, 2, axis = 0)[0]
 
 						pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
 						pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
@@ -309,13 +309,8 @@ def main():
 							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
 							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 
-							phenos1_1 = np.dot(pop1_overall, mut1_1)
-							phenos1_2 = np.dot(pop1_overall, mut1_2)
-							phenos1 = np.hstack((phenos1_1, phenos1_2)).reshape(N_adapts[0], 2)
-
-							phenos2_1 = np.dot(pop2_overall, mut2_1)
-							phenos2_2 = np.dot(pop2_overall, mut2_2)
-							phenos2 = np.hstack((phenos2_1, phenos2_2)).reshape(N_adapts[0], 2)
+							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
+							phenos2 = np.dot(pop2_overall, mut2) #sum mutations held by each individual
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
@@ -337,7 +332,6 @@ def main():
 							# mating and recombination
 							off1 = recomb(off1)
 							off2 = recomb(off2)
-
 
 							# mutation and population update
 							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1) #mutate_result[0] = pop,  mutate_result[1] = mut 
