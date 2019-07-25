@@ -138,9 +138,11 @@ def mutate(off, u, alpha, n, mut):
 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
 	pop = np.append(pop_chrom1, pop_chrom2, axis = 1)
 
-	mut_mutate = np.zeros(n) #mut_mutate is the same as mut, just defining it here one more time 
+	mut = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
 
-	muts = np.vstack((mut_mutate, newmuts)) #append effect of new mutations to mutation list
+	#create the dominance coefficient array (h)
+	#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
+	h = np.random.uniform(low = 0, high = 1, size = np.array(mut).shape[0]).reshape(np.array(mut).shape[0], 1)
 
 	return [pop, mut]
 
@@ -154,6 +156,9 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 	"""
 	This function creates mutations and updates population
 	"""
+	#convert mut from a list to an array 
+	mut = np.array(mut)
+
 	#split the pop into chrom1 and chrom2. 
 	pop_chrom1 = np.split(pop, 2, axis = 1)[0]
 	pop_chrom2 = np.split(pop, 2, axis = 1)[1]
@@ -172,7 +177,7 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 		pop_chrom2 = pop_chrom2[:, keep]
 		pop = np.hstack((pop_chrom1, pop_chrom2)) #horizontally reattach the chromosomes and make the pop
 
-		mut = mut[keep] #remove the lost loci by removing the rows
+		mut = mut[keep].tolist() #remove the lost loci by removing the rows
 
 		#pop = mutate_result[0] it might be good to include these somewhere in the simulations if sth goes wrong 
 		#mut = mutate_result[1]
@@ -205,7 +210,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [100] #number of diploid individuals (positive integer)
+N_adapts = [10] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [10] #selection strengths
@@ -214,7 +219,7 @@ opt_dist = 1 #distance to optima
 
 n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 50 #total number of generations populations adapt for
+maxgen = 100 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -222,7 +227,7 @@ maxgen = 50 #total number of generations populations adapt for
 ##PARAMETERS FOR HYBRIDS##
 ######################################################################
 
-nHybrids = 100 #number of hybrids to make at end of each replicate
+nHybrids = 10 #number of hybrids to make at end of each replicate
 
 ######################################################################
 ##FUNCTION FOR POPULATIONS TO ADAPT##
@@ -278,7 +283,7 @@ def main():
 						popfound2 = np.array([[1]] * N_adapt) 
 						popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-						mutfound = mut = [np.zeros(n).tolist()] #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
+						mutfound = mut = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
 
 						[pop1, mut1] = [popfound, mutfound] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mutfound] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
@@ -306,8 +311,14 @@ def main():
 							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
 							# genotype to phenotype (diploid):
-							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
-							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
+							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ).astype(int) # two chromosomes of pop1 averaged
+							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ).astype(int) # two chromosomes of pop2 averaged
+
+							#create the dominance coefficient array (h)
+							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
+							h = np.random.uniform(low = 0, high = 1, size = np.array(mut).shape[0]).reshape(np.array(mut).shape[0], 1)
+
+							# mut = np.zeros(pop1_overall.shape[1]).reshape(n, int(pop1_overall.shape[1] / n))
 
 							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
 							phenos2 = np.dot(pop2_overall, mut2) #sum mutations held by each individual
@@ -341,50 +352,103 @@ def main():
 							[pop1_overall, mut1] = remove_muts(pop1_overall, mut1)
 							[pop2_overall, mut2] = remove_muts(pop2_overall, mut2)
 
-							#create the dominance coefficient array (h)
-							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
-							h = np.random.uniform(low = 0, high = 1, size = mut.shape[0]).reshape(mut.shape[0], 1)
-
 							# go to next generation
 							gen += 1
 
 						#parent fitness and load (use parent 1, but could be either)	
-						parents = np.random.randint(len(pop1), size = nHybrids)
-						parent_phenos = np.dot(pop1_overall[parents],mut1)	
-						mean_parent_pheno = np.mean(parent_phenos, axis=0)
-						parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
-						pfit = np.mean(parent_fitnesses) #mean parent fitness
+						parents = np.random.randint(len(pop1_overall), size = nHybrids)
+						
+						pop1_chrom1 = np.split(pop1_overall, 2, axis = 0)[0]
+						pop1_chrom2 = np.split(pop1_overall, 2, axis = 0)[1]
+						pop1_overall = (pop1_chrom1 + pop1_chrom2) / 2 #effect of chromosomes averaged across loci. number of columns = number of loci 
+
+						# parent_phenos = np.dot(pop1_overall[parents], mut1)
+						#mean_parent_pheno = np.mean(parent_phenos, axis=0)
+						#parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
+						#pfit = np.mean(parent_fitnesses) #mean parent fitness
 
 						#make variables to hold offspring phenotypes
-						offphenos = dict()
-						offpheno = []
+						# offphenos = dict()
+						# offpheno = []
 
-						#make each of nHybrids hybrids
-						for k in range(nHybrids):
-							# choose random parents
-							randpar1 = pop1_overall[np.random.choice(len(pop1_overall))] 
-							randpar2 = pop2_overall[np.random.choice(len(pop2_overall))]
-							# get random parent phenotypes
-							phenpar1 = np.dot(randpar1, mut1)
-							phenpar2 = np.dot(randpar2, mut2)
-							# get mutations held by random parents
-							mutpar1 = mut1 * randpar1[:, None]
-							mutpar2 = mut2 * randpar2[:, None]
-							setA = set(tuple(x) for x in mutpar1)
-							setB = set(tuple(x) for x in mutpar2)
-							# find mutations shared by two parents (all in offspring)
-							sharedmuts = np.array([x for x in setA & setB])
-							if len(sharedmuts) < 1:
-								sharedmuts = np.array([[0] * n]) #give something in case empty
-							# find mutations not shared by two parents
-							unsharedmuts = np.array([x for x in setA ^ setB])
-							# which unshared mutations in offspring (free recombination between all loci, therefore gets each with 0.5 probability)
-							randmuts = np.random.randint(2, size = (len(unsharedmuts)))	
-							unsharedoffmuts = unsharedmuts * randmuts[:, None]
-							if len(unsharedoffmuts) < 1:
-							    unsharedoffmuts = np.array([[0] * n]) #give something in case empty
-							# offspring phenotype is collection of shared and random unshared mutations
-							offpheno.append(sum(np.append(sharedmuts, unsharedoffmuts, axis = 0)))
+						#HYBRIDIZATION
+
+						#choose random parents
+						parents_hybrid = np.random.randint(len(pop1_chrom1))
+
+						mut_hybrid = np.vstack((mut1, mut2))
+
+						#make the zero matrices
+						pop1_zero1 = np.zeros(len(pop1_chrom1) * pop2_chrom1.shape[1]).reshape(len(pop2_chrom1), pop2_chrom1.shape[1])
+						pop1_zero2 = np.zeros(len(pop1_chrom2) * pop2_chrom2.shape[1]).reshape(len(pop2_chrom2), pop2_chrom2.shape[1])
+
+						pop2_zero1 = np.zeros(len(pop2_chrom1) * pop1_chrom1.shape[1]).reshape(len(pop1_chrom1), pop1_chrom1.shape[1])
+						pop2_zero2 = np.zeros(len(pop2_chrom2) * pop1_chrom2.shape[1]).reshape(len(pop1_chrom2), pop1_chrom2.shape[1])
+
+
+						#attach the zero matrices
+						pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1))
+						pop1_chrom2_has0 = np.hstack((pop1_chrom2, pop1_zero2))
+
+						pop2_chrom1_has0 = np.hstack((pop2_chrom1, pop2_zero1))
+						pop2_chrom2_has0 = np.hstack((pop2_chrom2, pop2_zero2))
+
+						#make pairs
+						pairs_hybrid = np.resize(np.random.choice(len(pop1_chrom1), size=len(pop1_chrom1), replace=False), (int(len(pop1_chrom1)/2), 2))
+
+						#pick the related chromosomes of the pairs  
+						pop1_chrom1_hy = pop1_chrom1_has0[pairs_hybrid[:, 0]]
+						pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 0]]
+
+						pop1_chrom2_hy = pop1_chrom1_has0[pairs_hybrid[:, 1]]
+						pop2_chrom2_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
+
+						#recombination:
+						#randomly pick 0, 1, 2, or 3 to decide which pairs to match 
+
+						num = np.random.randint(4, size = 1).tolist()
+						if num[0] == 0:
+							F1_before_recomb = np.vstack((pop1_chrom1_hy, pop2_chrom1_hy))
+							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+
+						elif num[0] == 1:
+							F1_before_recomb = np.vstack((pop1_chrom2_hy, pop2_chrom2_hy))
+							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+
+						elif num[0] == 2:
+							F1_before_recomb = np.vstack((pop1_chrom1_hy, pop2_chrom2_hy))
+							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+
+						else:
+							F1_before_recomb = np.vstack((pop1_chrom2_hy, pop2_chrom1_hy))
+							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+
+						# #make each of nHybrids hybrids
+						# for k in range(nHybrids):
+						# 	# choose random parents
+						# 	randpar1 = pop1_overall[np.random.choice(len(pop1_overall))] 
+						# 	randpar2 = pop2_overall[np.random.choice(len(pop2_overall))]
+						# 	# get random parent phenotypes
+						# 	phenpar1 = np.dot(randpar1, mut1)
+						# 	phenpar2 = np.dot(randpar2, mut2)
+						# 	# get mutations held by random parents
+						# 	mutpar1 = mut1 * randpar1[:, None]
+						# 	mutpar2 = mut2 * randpar2[:, None]
+						# 	setA = set(tuple(x) for x in mutpar1)
+						# 	setB = set(tuple(x) for x in mutpar2)
+						# 	# find mutations shared by two parents (all in offspring)
+						# 	sharedmuts = np.array([x for x in setA & setB])
+						# 	if len(sharedmuts) < 1:
+						# 		sharedmuts = np.array([[0] * n]) #give something in case empty, parents don't share any mutations 
+						# 	# find mutations not shared by two parents
+						# 	unsharedmuts = np.array([x for x in setA ^ setB])
+						# 	# which unshared mutations in offspring (free recombination between all loci, therefore gets each with 0.5 probability)
+						# 	randmuts = np.random.randint(2, size = (len(unsharedmuts)))	
+						# 	unsharedoffmuts = unsharedmuts * randmuts[:, None]
+						# 	if len(unsharedoffmuts) < 1:
+						# 	    unsharedoffmuts = np.array([[0] * n]) #give something in case empty
+						# 	# offspring phenotype is collection of shared and random unshared mutations
+						# 	offpheno.append(sum(np.append(sharedmuts, unsharedoffmuts, axis = 0)))
 
 						#mean hybrid fitness
 						hybrid_fitnesses = np.maximum(fitness(offpheno, theta1, sigma_adapt), fitness(offpheno, theta2, sigma_adapt)) #max fitness of hybrid, ie. gets fitness in parent enviro it is closest to
