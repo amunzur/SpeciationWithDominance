@@ -50,12 +50,12 @@ def shuffle_along_axis(a, axis):
 
 def crossover(chromosome):
 	
-	c = np.random.randint(1, size = np.size(F1_before_recomb1, 1)).reshape(1, np.size(F1_before_recomb1, 1)) # create a random array to save the results of each loop
+	c = np.random.randint(1, size = np.size(chromosome, 1)).reshape(1, np.size(chromosome, 1)) # create a random array to save the results of each loop
 	
 	x = 0
 	while x < (N_adapts[0] * 2 + 1): 
 		
-		b = shuffle_along_axis(F1_before_recomb1[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
+		b = shuffle_along_axis(chromosome[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
 		c = np.concatenate((c, b), axis = 0) #update what F1_after_recomb2 is after each loop of recombination 
 		x+=2
 
@@ -217,7 +217,7 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 10 #number of replicates for each set of parameters
+nreps = 1 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 data_dir = 'data'
 
@@ -225,16 +225,16 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [10] #number of diploid individuals (positive integer)
+N_adapts = [200] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
-u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
-sigma_adapts = [10] #selection strengths
+u_adapt = 0.1 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
+sigma_adapts = [1] #selection strengths
 
 opt_dist = 1 #distance to optima
 
-n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 100 #total number of generations populations adapt for
+maxgen = 1000 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -242,7 +242,7 @@ maxgen = 100 #total number of generations populations adapt for
 ##PARAMETERS FOR HYBRIDS##
 ######################################################################
 
-nHybrids = 10 #number of hybrids to make at end of each replicate
+nHybrids = 200 #number of hybrids to make at end of each replicate
 
 ######################################################################
 ##FUNCTION FOR POPULATIONS TO ADAPT##
@@ -335,8 +335,8 @@ def main():
 
 							# mut = np.zeros(pop1_overall.shape[1]).reshape(n, int(pop1_overall.shape[1] / n))
 
-							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
-							phenos2 = np.dot(pop2_overall, mut2) #sum mutations held by each individual
+							phenos1 = np.dot(pop1_overall, mut1) * h  #sum mutations held by each individual
+							phenos2 = np.dot(pop2_overall, mut2) * h   #sum mutations held by each individual
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
@@ -371,11 +371,11 @@ def main():
 							gen += 1
 
 						#parent fitness and load (use parent 1, but could be either)	
-						parents = np.random.randint(len(pop1_overall), size = nHybrids)
+						# parents = np.random.randint(len(pop1_overall), size = nHybrids)
 						
-						pop1_chrom1 = np.split(pop1_overall, 2, axis = 0)[0]
-						pop1_chrom2 = np.split(pop1_overall, 2, axis = 0)[1]
-						pop1_overall = (pop1_chrom1 + pop1_chrom2) / 2 #effect of chromosomes averaged across loci. number of columns = number of loci 
+						# pop1_chrom1 = np.split(pop1_overall, 2, axis = 0)[0]
+						# pop1_chrom2 = np.split(pop1_overall, 2, axis = 0)[1]
+						# pop1_overall = (pop1_chrom1 + pop1_chrom2) / 2 #effect of chromosomes averaged across loci. number of columns = number of loci 
 
 						# parent_phenos = np.dot(pop1_overall[parents], mut1)
 						#mean_parent_pheno = np.mean(parent_phenos, axis=0)
@@ -447,8 +447,13 @@ def main():
 						#hybrid phenotypes
 						mut_hybrid = np.vstack((mut1, mut2))
 
-						#averaged hybrid genotypes 
-						hybrid_overall = 
+						#averaged hybrid genotypes to calculate the hybrid phenotypes 
+						hybrid_overall_recomb1 = (F1_after_recomb1_chrom2 + F1_after_recomb1_chrom1) / 2
+						hybrid_overall_recomb2 = (F1_after_recomb2_chrom2 + F1_after_recomb2_chrom1) / 2
+
+						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2))
+
+						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
 
 						# #make each of nHybrids hybrids
@@ -479,25 +484,25 @@ def main():
 						# 	offpheno.append(sum(np.append(sharedmuts, unsharedoffmuts, axis = 0)))
 
 						#mean hybrid fitness
-						hybrid_fitnesses = np.maximum(fitness(offpheno, theta1, sigma_adapt), fitness(offpheno, theta2, sigma_adapt)) #max fitness of hybrid, ie. gets fitness in parent enviro it is closest to
-						hyfit = np.mean(hybrid_fitnesses) #mean fitness
-						rhyfit = hyfit/pfit #relative fitness
-						max_hyfit = np.percentile(hybrid_fitnesses, 95) # max fitness over all hybrids (90th percentile ie top 10 per cent)
-						rel_max_hyfit = max_hyfit/pfit #max hybrid fitness relative to parental mean
+						# hybrid_fitnesses = np.maximum(fitness(offpheno, theta1, sigma_adapt), fitness(offpheno, theta2, sigma_adapt)) #max fitness of hybrid, ie. gets fitness in parent enviro it is closest to
+						# hyfit = np.mean(hybrid_fitnesses) #mean fitness
+						# rhyfit = hyfit/pfit #relative fitness
+						# max_hyfit = np.percentile(hybrid_fitnesses, 95) # max fitness over all hybrids (90th percentile ie top 10 per cent)
+						# rel_max_hyfit = max_hyfit/pfit #max hybrid fitness relative to parental mean
 
-						#lag load
-						meanpheno = np.mean(offpheno, axis=0) #mean hybrid phenotype
-						fitmeanpheno = np.mean(np.maximum(fitness(np.array([meanpheno]), theta1, sigma_adapt), fitness(np.array([meanpheno]), theta2, sigma_adapt)))/pfit #fitness of mean hybrid phenotype
-						# lagload = -np.log(fitmeanpheno) #lag load
-						Emeanpheno = np.mean(np.array([theta1, theta2]), axis=0)
-						Efitmeanpheno = np.mean(fitness(np.array([Emeanpheno]), theta1, sigma_adapt))/pfit
+						# #lag load
+						# meanpheno = np.mean(offpheno, axis=0) #mean hybrid phenotype
+						# fitmeanpheno = np.mean(np.maximum(fitness(np.array([meanpheno]), theta1, sigma_adapt), fitness(np.array([meanpheno]), theta2, sigma_adapt)))/pfit #fitness of mean hybrid phenotype
+						# # lagload = -np.log(fitmeanpheno) #lag load
+						# Emeanpheno = np.mean(np.array([theta1, theta2]), axis=0)
+						# Efitmeanpheno = np.mean(fitness(np.array([Emeanpheno]), theta1, sigma_adapt))/pfit
 
-						#save hybrid phenotype data (to make hybrid clouds)
-						pheno_data = np.column_stack( [np.array([i+1 for i in range(len(offpheno))]), np.array([rep+1]*len(offpheno)), np.array([round(angles[j]*180/math.pi,2)]*len(offpheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(offpheno)), offpheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
+						# #save hybrid phenotype data (to make hybrid clouds)
+						pheno_data = np.column_stack( [np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
 						np.savetxt(fileHandle_B, pheno_data, fmt='%.3f', delimiter=',') #save
 
 						#save summary data
-						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), rhyfit])
+						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]) #rhfit was in the equation, but i removed. juy 26
 
 						#print an update
 						print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1)) 
