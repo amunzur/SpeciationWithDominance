@@ -48,6 +48,21 @@ def shuffle_along_axis(a, axis):
 	idx = np.random.rand(*a.shape).argsort(axis = axis)
 	return np.take_along_axis(a,idx,axis = axis) 
 
+def crossover(chromosome):
+	
+	c = np.random.randint(1, size = np.size(F1_before_recomb1, 1)).reshape(1, np.size(F1_before_recomb1, 1)) # create a random array to save the results of each loop
+	
+	x = 0
+	while x < (N_adapts[0] * 2 + 1): 
+		
+		b = shuffle_along_axis(F1_before_recomb1[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
+		c = np.concatenate((c, b), axis = 0) #update what F1_after_recomb2 is after each loop of recombination 
+		x+=2
+
+	crossedover = c[1:(N_adapts[0] * 2 + 1)]
+
+	return crossedover
+
 
 def recomb(surv):
 	"""
@@ -373,11 +388,8 @@ def main():
 
 						#HYBRIDIZATION
 
-						#choose random parents
-						parents_hybrid = np.random.randint(len(pop1_chrom1))
-
-						mut_hybrid = np.vstack((mut1, mut2))
-
+						#genotype of hybrids
+				
 						#make the zero matrices
 						pop1_zero1 = np.zeros(len(pop1_chrom1) * pop2_chrom1.shape[1]).reshape(len(pop2_chrom1), pop2_chrom1.shape[1])
 						pop1_zero2 = np.zeros(len(pop1_chrom2) * pop2_chrom2.shape[1]).reshape(len(pop2_chrom2), pop2_chrom2.shape[1])
@@ -390,38 +402,54 @@ def main():
 						pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1))
 						pop1_chrom2_has0 = np.hstack((pop1_chrom2, pop1_zero2))
 
-						pop2_chrom1_has0 = np.hstack((pop2_chrom1, pop2_zero1))
-						pop2_chrom2_has0 = np.hstack((pop2_chrom2, pop2_zero2))
+						pop2_chrom1_has0 = np.hstack((pop2_zero1, pop2_chrom1))
+						pop2_chrom2_has0 = np.hstack((pop2_zero2, pop2_chrom2))
 
 						#make pairs
 						pairs_hybrid = np.resize(np.random.choice(len(pop1_chrom1), size=len(pop1_chrom1), replace=False), (int(len(pop1_chrom1)/2), 2))
 
 						#pick the related chromosomes of the pairs  
 						pop1_chrom1_hy = pop1_chrom1_has0[pairs_hybrid[:, 0]]
-						pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 0]]
+						pop1_chrom2_hy = pop1_chrom2_has0[pairs_hybrid[:, 0]]
 
-						pop1_chrom2_hy = pop1_chrom1_has0[pairs_hybrid[:, 1]]
-						pop2_chrom2_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
+						pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
+						pop2_chrom2_hy = pop2_chrom2_has0[pairs_hybrid[:, 1]]
 
 						#recombination:
 						#randomly pick 0, 1, 2, or 3 to decide which pairs to match 
 
-						num = np.random.randint(4, size = 1).tolist()
+						num = np.random.randint(2, size = 1).tolist()
+
 						if num[0] == 0:
-							F1_before_recomb = np.vstack((pop1_chrom1_hy, pop2_chrom1_hy))
-							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+							F1_before_recomb1 = np.concatenate(np.stack((pop1_chrom1_hy, pop2_chrom1_hy), axis = 1))
+							F1_after_recomb1 = crossover(F1_before_recomb1)
+							F1_after_recomb1_chrom1 = F1_after_recomb1[::2] #picks every other odd row, chrom1
+							F1_after_recomb1_chrom2 = F1_after_recomb1[1::2] #picks every other even row, chrom2
+
+							
+							F1_before_recomb2 = np.concatenate(np.stack((pop1_chrom2_hy, pop2_chrom2_hy), axis = 1))
+							F1_after_recomb2 = crossover(F1_before_recomb2)
+							F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
+							F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
+
 
 						elif num[0] == 1:
-							F1_before_recomb = np.vstack((pop1_chrom2_hy, pop2_chrom2_hy))
-							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+							F1_before_recomb1 = np.concatenate(np.stack((pop1_chrom1_hy, pop2_chrom2_hy), axis = 1))
+							F1_after_recomb1 = crossover(F1_before_recomb1)
+							F1_after_recomb1_chrom1 = F1_after_recomb1[::2] #picks every other odd row, chrom1
+							F1_after_recomb1_chrom2 = F1_after_recomb1[1::2] #picks every other even row, chrom2
 
-						elif num[0] == 2:
-							F1_before_recomb = np.vstack((pop1_chrom1_hy, pop2_chrom2_hy))
-							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+							F1_before_recomb2 = np.concatenate(np.stack((pop1_chrom2_hy, pop2_chrom1_hy), axis = 1))
+							F1_after_recomb2 = crossover(F1_before_recomb2)
+							F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
+							F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
 
-						else:
-							F1_before_recomb = np.vstack((pop1_chrom2_hy, pop2_chrom1_hy))
-							F1_after_recomb = shuffle_along_axis(F1_before_recomb, axis = 0)
+						#hybrid phenotypes
+						mut_hybrid = np.vstack((mut1, mut2))
+
+						#averaged hybrid genotypes 
+						hybrid_overall = 
+
 
 						# #make each of nHybrids hybrids
 						# for k in range(nHybrids):
