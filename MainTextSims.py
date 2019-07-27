@@ -326,17 +326,22 @@ def main():
 							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
 							# genotype to phenotype (diploid):
-							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ).astype(int) # two chromosomes of pop1 averaged
-							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ).astype(int) # two chromosomes of pop2 averaged
+							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
+							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 
 							#create the dominance coefficient array (h)
 							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
-							h = np.random.uniform(low = 0, high = 1, size = np.array(mut).shape[0]).reshape(np.array(mut).shape[0], 1)
+							#replace the values 0.5 with the h. 
+							h_pop1 = np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
+							pop1_overall[pop1_overall == 0.5] = h_pop1
+
+							h_pop2 = np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
+							pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# mut = np.zeros(pop1_overall.shape[1]).reshape(n, int(pop1_overall.shape[1] / n))
 
-							phenos1 = np.dot(pop1_overall, mut1) * h  #sum mutations held by each individual
-							phenos2 = np.dot(pop2_overall, mut2) * h   #sum mutations held by each individual
+							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
+							phenos2 = np.dot(pop2_overall, mut2) #sum mutations held by each individual
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
