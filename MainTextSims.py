@@ -329,17 +329,6 @@ def main():
 							pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
 							pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 
-							#create the dominance coefficient array (h)
-							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
-							#replace the values 0.5 with the h. 
-							h_pop1 = np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
-							pop1_overall[pop1_overall == 0.5] = h_pop1
-
-							h_pop2 = np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
-							pop2_overall[pop2_overall == 0.5] = h_pop2
-
-							# mut = np.zeros(pop1_overall.shape[1]).reshape(n, int(pop1_overall.shape[1] / n))
-
 							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
 							phenos2 = np.dot(pop2_overall, mut2) #sum mutations held by each individual
 
@@ -348,9 +337,9 @@ def main():
 							w2 = fitness(phenos2, theta2, sigma_adapt)
 
 							# wright-fisher (multinomial) sampling
-							parents1 = np.random.multinomial(N_adapt, w1/sum(w1)) # number of times each parent chosen, drawing samples from a multinomial ditribution
+							# number of times each parent chosen, drawing samples from a multinomial ditribution
 							# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen. if you are more fit, you are chosen more often. 
-							
+							parents1 = np.random.multinomial(N_adapt, w1/sum(w1))
 							off1_chrom1 = np.repeat(pop1_overall, parents1, axis=0) 
 							off1_chrom2 = np.repeat(pop1_overall, parents1, axis=0)
 							off1 = [off1_chrom1, off1_chrom2]
@@ -367,6 +356,16 @@ def main():
 							# mutation and population update
 							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1) #mutate_result[0] = pop,  mutate_result[1] = mut 
 							[pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
+
+
+							#create the dominance coefficient array (h)
+							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
+							#replace the values 0.5 with the h. 
+							h_pop1 = np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
+							pop1_overall[pop1_overall == 0.5] = h_pop1
+
+							h_pop2 = np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
+							pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# remove lost mutations (all zero columns in pop)
 							[pop1_overall, mut1] = remove_muts(pop1_overall, mut1)
@@ -459,6 +458,9 @@ def main():
 						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2))
 
 						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
+						h_hybrid_pheno = np.random.uniform(low = 0, high = 1, size = len(hybrid_pheno[hybrid_pheno == 0.5]))
+						hybrid_pheno[hybrid_pheno == 0.5] = h_hybrid_pheno
+
 
 
 						# #make each of nHybrids hybrids
