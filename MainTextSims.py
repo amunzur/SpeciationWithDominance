@@ -139,8 +139,8 @@ def mutate(off, u, alpha, n, mut):
 	newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd (how far you from the mean) rows:nmuts coloumns=n. each pair is x and y coordinates. they tell you how far and which direction you go away from the origin 
 	
 	#pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants. from the identity array, only pick the rows of individuls that had a lower nmuts value than alpha. then append them next to the individuals themselves. 
-	pop_chrom1 = off[0] #split the off array into 2 column wise. left side chrom1, right is chrom2. 
-	pop_chrom2 = off[1]
+	pop_chrom1 = np.split(off, 2, axis = 1)[0] #split the off array into 2 column wise. left side chrom1, right is chrom2. 
+	pop_chrom2 = np.split(off, 2, axis = 1)[1]
 	
 	#update pop_chrom1
 	added_muts = np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]) #pick the rows of mutated individuals from the identity array
@@ -154,10 +154,6 @@ def mutate(off, u, alpha, n, mut):
 	pop = np.append(pop_chrom1, pop_chrom2, axis = 1)
 
 	mut = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
-
-	#create the dominance coefficient array (h)
-	#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
-	h = np.random.uniform(low = 0, high = 1, size = np.array(mut).shape[0]).reshape(np.array(mut).shape[0], 1)
 
 	return [pop, mut]
 
