@@ -151,11 +151,13 @@ def mutate(off, u, alpha, n, mut):
 	pop_chrom2 = np.append(pop_chrom2, zero, axis = 1) #append zero array to chrom2
 
 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
-	pop = np.append(pop_chrom1, pop_chrom2, axis = 1)
+	pop_genotype = np.append(pop_chrom1, pop_chrom2, axis = 1) #both chromosomes present
 
-	mut = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
+	pop_overall = (pop_chrom1 + pop_chrom2) / 2 #chromosomes averaged 
 
-	return [pop, mut]
+	mut_return = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
+
+	return [pop_genotype, pop_overall, mut_return]
 
 def which_index(pop):
 	return np.array([
@@ -174,21 +176,25 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 	pop_chrom1 = np.split(pop, 2, axis = 1)[0]
 	pop_chrom2 = np.split(pop, 2, axis = 1)[1]
 
-	keep_pop_chrom1 = np.array(pop_chrom1.any(axis=0)) #go through the columns of pop_chrom1 and determine if any column is all 0
-	keep_pop_chrom2 = np.array(pop_chrom2.any(axis=0))
+	# keep_pop_chrom1 = np.array(pop_chrom1.any(axis=0)) #go through the columns of pop_chrom1 and determine if any column is all 0
+	# keep_pop_chrom2 = np.array(pop_chrom2.any(axis=0))
 
-	keep = np.intersect1d(which_index(keep_pop_chrom1), which_index(keep_pop_chrom2)) #find the indices where the two arrays have 0 in the same columns 
+	chrom1_zero = np.where(~pop_chrom1.any(axis = 0))[0] #find the columns that are all zeros
+	chrom2_zero = np.where(~pop_chrom2.any(axis = 0))[0]
 
-	if len(keep) == 0:
+	remove = np.intersect1d(chrom1_zero, chrom2_zero) #find the indices where the two arrays have 0 in the same columns 
+
+	# keep = np.intersect1d(which_index(keep_pop_chrom1), which_index(keep_pop_chrom2)) 
+
+	if len(remove) == 0:
 		pop = np.hstack((pop_chrom1, pop_chrom2))
-		mut = mut 
 
 	else: 
-		pop_chrom1 = pop_chrom1[:, keep] #update the chroms by removing the columns with lost mutations
-		pop_chrom2 = pop_chrom2[:, keep]
+		pop_chrom1 = np.delete(pop_chrom1, remove, 1) # delete the columns that are all zeros 
+		pop_chrom2 = np.delete(pop_chrom1, remove, 1)
 		pop = np.hstack((pop_chrom1, pop_chrom2)) #horizontally reattach the chromosomes and make the pop
 
-		mut = mut[keep].tolist() #remove the lost loci by removing the rows
+		mut = np.delete(mut, remove, 0) #remove the lost loci by removing the related rows
 
 		#pop = mutate_result[0] it might be good to include these somewhere in the simulations if sth goes wrong 
 		#mut = mutate_result[1]
@@ -221,7 +227,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [200] #number of diploid individuals (positive integer)
+N_adapts = [100] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.1 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
@@ -230,7 +236,7 @@ opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 1000 #total number of generations populations adapt for
+maxgen = 100 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -350,9 +356,8 @@ def main():
 							off2 = recomb(off2)
 
 							# mutation and population update
-							[pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1) #mutate_result[0] = pop,  mutate_result[1] = mut 
-							[pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
-
+							[pop1_genotype, pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1) #mutate_result[0] = pop,  mutate_result[1] = mut 
+							[pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
 							#create the dominance coefficient array (h)
 							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
@@ -364,8 +369,14 @@ def main():
 							pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# remove lost mutations (all zero columns in pop)
-							[pop1_overall, mut1] = remove_muts(pop1_overall, mut1)
-							[pop2_overall, mut2] = remove_muts(pop2_overall, mut2)
+							[pop1_genotype, mut1] = remove_muts(pop1_genotype, mut1)
+							[pop2_genotype, mut2] = remove_muts(pop2_genotype, mut2)
+
+							pop1_chrom1 = np.split(pop1_genotype, 2, axis = 1)[0]
+							pop1_chrom2 = np.split(pop1_genotype, 2, axis = 1)[1]
+
+							pop2_chrom1 = np.split(pop2_genotype, 2, axis = 1)[0]
+							pop2_chrom2 = np.split(pop2_genotype, 2, axis = 1)[1]
 
 							# go to next generation
 							gen += 1
@@ -386,7 +397,7 @@ def main():
 						# offphenos = dict()
 						# offpheno = []
 
-						#HYBRIDIZATION
+						#HYBRIDIZATION - always choose parents from different populations 
 
 						#genotype of hybrids
 				
@@ -451,11 +462,11 @@ def main():
 						hybrid_overall_recomb1 = (F1_after_recomb1_chrom2 + F1_after_recomb1_chrom1) / 2
 						hybrid_overall_recomb2 = (F1_after_recomb2_chrom2 + F1_after_recomb2_chrom1) / 2
 
-						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2))
+						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2)) #stack all hybrids phenos. each row is one individual. 
+						h_hybrid = np.random.uniform(low = 0, high = 1, size = len(hybrid_overall_all[hybrid_overall_all == 0.5]))
+						hybrid_overall_all[hybrid_overall_all == 0.5] = h_hybrid
 
 						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
-						h_hybrid_pheno = np.random.uniform(low = 0, high = 1, size = len(hybrid_pheno[hybrid_pheno == 0.5]))
-						hybrid_pheno[hybrid_pheno == 0.5] = h_hybrid_pheno
 
 
 
@@ -501,7 +512,7 @@ def main():
 						# Efitmeanpheno = np.mean(fitness(np.array([Emeanpheno]), theta1, sigma_adapt))/pfit
 
 						# #save hybrid phenotype data (to make hybrid clouds)
-						pheno_data = np.column_stack( [np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
+						pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
 						np.savetxt(fileHandle_B, pheno_data, fmt='%.3f', delimiter=',') #save
 
 						#save summary data
