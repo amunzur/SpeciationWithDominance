@@ -234,7 +234,7 @@ opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 1000 #total number of generations populations adapt for
+maxgen = 100 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
