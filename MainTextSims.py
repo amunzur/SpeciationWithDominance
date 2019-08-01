@@ -200,7 +200,7 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 
 	pop_overall = (pop_chrom1 + pop_chrom2) / 2 
 	
-	return[pop_genotype, pop_overall, mut]
+	return[pop_chrom1, pop_chrom2, pop_genotype, pop_overall, mut]
 
 		#pop = mutate_result[0] it might be good to include these somewhere in the simulations if sth goes wrong 
 		#mut = mutate_result[1]
@@ -231,16 +231,16 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [200] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
-u_adapt = 0.01 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
+u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
 
 opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 500 #total number of generations populations adapt for
+maxgen = 1000 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -346,13 +346,13 @@ def main():
 							# number of times each parent chosen, drawing samples from a multinomial ditribution
 							# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen. if you are more fit, you are chosen more often. 
 							parents1 = np.random.multinomial(N_adapt, w1/sum(w1))
-							off1_chrom1 = np.repeat(pop1_overall, parents1, axis = 0) 
-							off1_chrom2 = np.repeat(pop1_overall, parents1, axis = 0)
+							off1_chrom1 = np.repeat(pop1_chrom1, parents1, axis = 0) 
+							off1_chrom2 = np.repeat(pop1_chrom2, parents1, axis = 0)
 							off1 = [off1_chrom1, off1_chrom2]
 							
 							parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
-							off2_chrom1 = np.repeat(pop2_overall, parents2, axis = 0) # offspring genotypes of pop2
-							off2_chrom2 = np.repeat(pop2_overall, parents2, axis = 0)
+							off2_chrom1 = np.repeat(pop2_chrom1, parents2, axis = 0) # offspring genotypes of pop2
+							off2_chrom2 = np.repeat(pop2_chrom2, parents2, axis = 0)
 							off2 = [off2_chrom1, off2_chrom2]
 
 							# mating and recombination
@@ -377,8 +377,8 @@ def main():
 							# pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# remove lost mutations (all zero columns in pop)
-							[pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
-							[pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
+							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
+							[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
 
 							# go to next generation
 							gen += 1
