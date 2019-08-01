@@ -186,20 +186,21 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 	# keep = np.intersect1d(which_index(keep_pop_chrom1), which_index(keep_pop_chrom2)) 
 
 	if len(remove) == 0:
-		pop = np.hstack((pop_chrom1, pop_chrom2))
+		pop_genotype = [pop_chrom1, pop_chrom2]
 
 	else: 
 		pop_chrom1 = np.delete(pop_chrom1, remove, 1) # delete the columns that are all zeros 
-		pop_chrom2 = np.delete(pop_chrom1, remove, 1)
-		pop = np.hstack((pop_chrom1, pop_chrom2)) #horizontally reattach the chromosomes and make the pop
+		pop_chrom2 = np.delete(pop_chrom2, remove, 1)
+		pop_genotype = [pop_chrom1, pop_chrom2] #horizontally reattach the chromosomes and make the pop
 
 		mut = np.delete(mut, remove, 0) #remove the lost loci by removing the related rows
 
 		#pop = mutate_result[0] it might be good to include these somewhere in the simulations if sth goes wrong 
 		#mut = mutate_result[1]
-	
-	return[pop, mut]
 
+	pop_overall = (pop_chrom1 + pop_chrom2) / 2 
+	
+	return[pop_genotype, pop_overall, mut]
 
 		#pop = mutate_result[0] it might be good to include these somewhere in the simulations if sth goes wrong 
 		#mut = mutate_result[1]
@@ -230,16 +231,16 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [10] #number of diploid individuals (positive integer)
+N_adapts = [200] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
-u_adapt = 0.1 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
+u_adapt = 0.01 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
 
 opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 100 #total number of generations populations adapt for
+maxgen = 500 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -376,14 +377,8 @@ def main():
 							# pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# remove lost mutations (all zero columns in pop)
-							[pop1_genotype, mut1] = remove_muts(pop1_genotype, mut1)
-							[pop2_genotype, mut2] = remove_muts(pop2_genotype, mut2)
-
-							pop1_genotype = [np.split(pop1_genotype, 2, axis = 1)[0], np.split(pop1_genotype, 2, axis = 1)[1]]
-							pop2_genotype = [np.split(pop2_genotype, 2, axis = 1)[0], np.split(pop2_genotype, 2, axis = 1)[1]]
-
-							off1 = pop1_genotype
-							off2 = pop2_genotype
+							[pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
+							[pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
 
 							# go to next generation
 							gen += 1
@@ -408,11 +403,11 @@ def main():
 
 						#genotype of hybrids
 
-						pop1_chrom1 = np.split(pop1_genotype, 2, axis = 1)[0]
-						pop1_chrom2 = np.split(pop1_genotype, 2, axis = 1)[1]
+						pop1_chrom1 = pop1_genotype[0]
+						pop1_chrom2 = pop1_genotype[1]
 
-						pop2_chrom1 = np.split(pop2_genotype, 2, axis = 1)[0]
-						pop2_chrom2 = np.split(pop2_genotype, 2, axis = 1)[1]
+						pop2_chrom1 = pop2_genotype[0]
+						pop2_chrom2 = pop2_genotype[1]
 						
 						#make the zero matrices
 						pop1_zero1 = np.zeros(len(pop1_chrom1) * pop2_chrom1.shape[1]).reshape(len(pop2_chrom1), pop2_chrom1.shape[1])
