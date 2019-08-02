@@ -6,6 +6,7 @@ import time
 # import matplotlib.pyplot as plt
 import csv
 import math
+import pandas as pd
 
 ######################################################################
 ##FUNCTIONS##
@@ -17,8 +18,9 @@ def open_output_files(n, N, alpha, u, sigma, data_dir):
 	handles to each.
 	"""
 	sim_id = 'n%d_N%d_alpha%.4f_u%.4f_sigma%.4f' %(n, N, alpha, u, sigma)
-	outfile_A = open("%s/Fig3_4_%s.csv" %(data_dir, sim_id), "w") #summary data
-	outfile_B = open("%s/Fig3_4_phenotypes_%s.csv" %(data_dir, sim_id),"wb") #hybrid phenotypes
+	outfile_A = open("%ssummary_data%s.csv" %(data_dir, sim_id), "w") #summary data
+	outfile_B = open("%sphenotypes%s.csv" %(data_dir, sim_id),"w") #hybrid phenotypes
+
 	return [outfile_A, outfile_B]
 
 def write_data_to_output(fileHandles, data):
@@ -233,14 +235,14 @@ data_dir = 'data'
 
 N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
-u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
+u_adapt = 0.01 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
 
 opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 1000 #total number of generations populations adapt for
+maxgen = 500 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -477,7 +479,19 @@ def main():
 
 						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
+						# find the mean phenos of each column 
+						phenos1_1 = (np.sum(phenos1, axis = 0)[0]) / len(phenos1)
+						phenos1_2 = (np.sum(phenos1, axis = 0)[1]) / len(phenos1)
 
+						phenos2_1 = (np.sum(phenos2, axis = 0)[0]) / len(phenos2)
+						phenos2_1 = (np.sum(phenos2, axis = 0)[1]) / len(phenos2)
+
+						hybrid_phenos1 = (np.sum(hybrid_pheno, axis = 0)[0]) / len(hybrid_pheno)
+						hybrid_phenos2 = (np.sum(hybrid_pheno, axis = 0)[1]) / len(hybrid_pheno)
+
+						mean_phenos_data = [phenos1_1, phenos1_2, phenos2_1, phenos2_1, hybrid_phenos1, hybrid_phenos2]
+						column_names_phenos = ["phenos1_1", "phenos1_2", "phenos2_1", "phenos2_1", "hybrid_phenos1", "hybrid_phenos2"]
+						named_mean_phenos_data = np.column_stack((column_names_phenos, mean_phenos_data))
 
 						# #make each of nHybrids hybrids
 						# for k in range(nHybrids):
@@ -521,11 +535,19 @@ def main():
 						# Efitmeanpheno = np.mean(fitness(np.array([Emeanpheno]), theta1, sigma_adapt))/pfit
 
 						# #save hybrid phenotype data (to make hybrid clouds)
-						pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
+						pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno, np.array([mean_phenos_data] * len(hybrid_pheno))]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
+						names = np.array(["individuals", "reps", "angle", "opt_dist", "hybrid_phenos_1", "hybrid_phenos2", "phenos1_1", "phenos1_2", "phenos2_1", "phenos2_1", "hybrid_phenos1", "hybrid_phenos2"])# column_names = np.array(['individuals', 'sigma', 'angle', '?', 'mut1_1', 'mut1_2'])
+						named_results = np.vstack((names, pheno_data))
+						# a = np.vstack((column_names, pheno_data))
+						# named = pd.DataFrame(pheno_data, columns = names)
 						np.savetxt(fileHandle_B, pheno_data, fmt='%.3f', delimiter=',') #save
 
 						#save summary data
-						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]) #rhfit was in the equation, but i removed. juy 26
+						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]) #rhfit was in the equation, but i removed. july 26
+
+						#save phenos data
+						
+						
 
 						#print an update
 						print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1)) 

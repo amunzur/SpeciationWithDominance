@@ -72,5 +72,9 @@ ilk says: range
 ikinci sayi: size. mesela 10 ise 10 element oluyor arrayde. 
 replace = false olunca ayni sayilari tekrar etmiyor 
 
+GGOD TIP: 
+np.random.uniform 
+np.random.normal 
 
+they each pick a random numbers from a distribution. each number is equally likely to be chosen in the uniform one. they are not equally likely in the normal distribution. 
 
