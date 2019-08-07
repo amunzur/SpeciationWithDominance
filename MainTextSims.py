@@ -71,19 +71,21 @@ def recomb(surv):
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	surv_stacked = np.concatenate(np.stack((surv[0], surv[1]), axis = 1)) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+	chroms_stacked = np.concatenate(np.stack((surv[0], surv[1]), axis = 1)).reshape(int((np.shape(surv[0])[0])), 2, int((np.shape(surv[0])[1]))) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+
+	surv_stacked = np.concatenate(shuffle_along_axis(chroms_stacked, 1))
 	
-	#recombination 
-	c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
+	# #recombination 
+	# c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
 
-	x = 0
-	while x < (N_adapts[0] * 2 + 1): 
+	# x = 0
+	# while x < (N_adapts[0] * 2 + 1): 
 		
-		b = shuffle_along_axis(surv_stacked[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
-		c = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
-		x+=2
+	# 	b = shuffle_along_axis(surv_stacked[x:(x+2)], axis = 0) #shuffle along columns in groups of 2. each group of 2 represents chrom1 an chrom2 of each individual 
+	# 	c = np.concatenate((c, b), axis = 0) #update what surv_stacked is after each loop of recombination 
+	# 	x+=2
 
-	surv_stacked = c[1:(N_adapts[0] * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly. chrom1, chrom2, chrom1, chrom2 seklinde devam ediyor rowlar. 
+	# surv_stacked = c[1:(N_adapts[0] * 2 + 1)] #remove the empty array from the top surv_stacked, update surv_stacked accordingly. chrom1, chrom2, chrom1, chrom2 seklinde devam ediyor rowlar. 
 
 	surv_chrom1 = surv_stacked[::2] #this selects every odd row - chrom1 of N_adapts number of individuals after shuffling, both parent1 and parent2. number of rows = N_adapts, number of columns = number of loci   
 	surv_chrom2 = surv_stacked[1::2] #this selects every even row - chrom 2 of N_adapts number of individuals, both parent1 and parent2 
@@ -233,7 +235,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [2000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.01 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
@@ -242,7 +244,7 @@ opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 500 #total number of generations populations adapt for
+maxgen = 800 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
