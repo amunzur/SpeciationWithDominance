@@ -71,11 +71,13 @@ def recomb(surv):
 	This function creates offspring through pairing of parents (diploid) and recombination (i.e, meiosis)
 	"""
 	# crossing over within diploid parents to make gametes, input is 1000 rows, output also 1000 rows; n_loci columns
-	chroms_stacked = np.concatenate(np.stack((surv[0], surv[1]), axis = 1)).reshape(int((np.shape(surv[0])[0])), 2, int((np.shape(surv[0])[1]))) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
+	chroms_stacked = np.concatenate(np.stack((surv[0], surv[1]), axis = 1)).reshape((np.shape(surv[0])[0]), 2, (np.shape(surv[0])[1])) # this places the related rows together, 1st row of each together, then 2nd, then 3rd... - 4 loci. stacks the two arrays vertically 
 
-	surv_stacked = np.concatenate(shuffle_along_axis(chroms_stacked, 1))
+	#recombination without looping 
+	surv_stacked1 = shuffle_along_axis(chroms_stacked, 1)
+	surv_stacked = np.reshape(surv_stacked1, (np.shape(chroms_stacked)[0] * 2, np.shape(chroms_stacked)[2]))
 	
-	# #recombination 
+	# #recombination through looping
 	# c = np.random.randint(1, size = np.size(surv_stacked, 1)).reshape(1, np.size(surv_stacked, 1)) # create a random array to save the results of each loop
 
 	# x = 0
@@ -138,7 +140,7 @@ def mutate(off, u, alpha, n, mut):
 	This function creates mutations and updates population
 	"""
 	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of off random numbers as between 0 and 1) size = number of columns of off (number of individuals)
-	nmuts = sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations. 
+	nmuts = np.sum(rand3 < u_adapt) # mutate if random number is below mutation rate; returns number of new mutations. 
 	whomuts = np.where(rand3 < u_adapt) #indices of mutants. each refer to the index of the individuals in the off matrix. 
 	newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd (how far you from the mean) rows:nmuts coloumns=n. each pair is x and y coordinates. they tell you how far and which direction you go away from the origin 
 	
@@ -167,6 +169,7 @@ def which_index(pop):
 	return np.array([
 		i for i in range(len(pop))
 		if pop[i] == False ])
+
 
 def remove_muts(pop, mut): #here pop is the same thing as off
 	"""
@@ -235,7 +238,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [2000] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.01 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
@@ -257,6 +260,7 @@ nHybrids = 200 #number of hybrids to make at end of each replicate
 ######################################################################
 ##FUNCTION FOR POPULATIONS TO ADAPT##
 ######################################################################
+
 
 def main():
 
@@ -374,11 +378,11 @@ def main():
 							#create the dominance coefficient array (h)
 							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
 							#replace the values 0.5 with the h. 
-							# h_pop1 = np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
-							# pop1_overall[pop1_overall == 0.5] = h_pop1
+							h_pop1 = np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
+							pop1_overall[pop1_overall == 0.5] = h_pop1
 
-							# h_pop2 = np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
-							# pop2_overall[pop2_overall == 0.5] = h_pop2
+							h_pop2 = np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
+							pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# remove lost mutations (all zero columns in pop)
 							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
@@ -476,8 +480,8 @@ def main():
 
 						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2)) #stack all hybrids phenos. each row is one individual. 
 						
-						# h_hybrid = np.random.uniform(low = 0, high = 1, size = len(hybrid_overall_all[hybrid_overall_all == 0.5]))
-						# hybrid_overall_all[hybrid_overall_all == 0.5] = h_hybrid
+						h_hybrid = np.random.uniform(low = 0, high = 1, size = len(hybrid_overall_all[hybrid_overall_all == 0.5]))
+						hybrid_overall_all[hybrid_overall_all == 0.5] = h_hybrid
 
 						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
@@ -486,13 +490,13 @@ def main():
 						phenos1_2 = (np.sum(phenos1, axis = 0)[1]) / len(phenos1)
 
 						phenos2_1 = (np.sum(phenos2, axis = 0)[0]) / len(phenos2)
-						phenos2_1 = (np.sum(phenos2, axis = 0)[1]) / len(phenos2)
+						phenos2_2 = (np.sum(phenos2, axis = 0)[1]) / len(phenos2)
 
 						hybrid_phenos1 = (np.sum(hybrid_pheno, axis = 0)[0]) / len(hybrid_pheno)
 						hybrid_phenos2 = (np.sum(hybrid_pheno, axis = 0)[1]) / len(hybrid_pheno)
 
-						mean_phenos_data = [phenos1_1, phenos1_2, phenos2_1, phenos2_1, hybrid_phenos1, hybrid_phenos2]
-						column_names_phenos = ["phenos1_1", "phenos1_2", "phenos2_1", "phenos2_1", "hybrid_phenos1", "hybrid_phenos2"]
+						mean_phenos_data = [phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2]
+						column_names_phenos = ["phenos1_1", "phenos1_2", "phenos2_1", "phenos2_2", "hybrid_phenos1", "hybrid_phenos2"]
 						named_mean_phenos_data = np.column_stack((column_names_phenos, mean_phenos_data))
 
 						# #make each of nHybrids hybrids
@@ -537,15 +541,17 @@ def main():
 						# Efitmeanpheno = np.mean(fitness(np.array([Emeanpheno]), theta1, sigma_adapt))/pfit
 
 						# #save hybrid phenotype data (to make hybrid clouds)
-						pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno, np.array([mean_phenos_data] * len(hybrid_pheno))]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
-						names = np.array(["individuals", "reps", "angle", "opt_dist", "hybrid_phenos_1", "hybrid_phenos2", "phenos1_1", "phenos1_2", "phenos2_1", "phenos2_1", "hybrid_phenos1", "hybrid_phenos2"])# column_names = np.array(['individuals', 'sigma', 'angle', '?', 'mut1_1', 'mut1_2'])
-						named_results = np.vstack((names, pheno_data))
+						pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno]) #, np.array([mean_phenos_data] * len(hybrid_pheno))]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
+						names1 = np.array(["individuals", "reps", "angle", "opt_dist", "phenos1_1", "phenos1_2", "phenos2_1", "phenos2_2", "hybrid_phenos1", "hybrid_phenos2"])# column_names = np.array(['individuals', 'sigma', 'angle', '?', 'mut1_1', 'mut1_2'])
+						names2 = np.array(["angle", "rep", "opt_dist", "phenos1_1", "phenos1_2", "phenos2_1", "phenos2_1", "hybrid_phenos1", "hybrid_phenos2"])
+						# named_results = np.vstack((names, pheno_data))
 						# a = np.vstack((column_names, pheno_data))
 						# named = pd.DataFrame(pheno_data, columns = names)
-						np.savetxt(fileHandle_B, pheno_data, fmt='%.3f', delimiter=',') #save
+						df1 = pd.DataFrame({"individuals": pheno_data[:, 0], "reps": pheno_data[:, 1], "angle": pheno_data[:, 2], "opt_dist": pheno_data[:, 3],  "hybrid_phenos1": pheno_data[:, 4], "hybrid_phenos2": pheno_data[:, 5]}) # "phenos1_1":  pheno_data[:, 4], "phenos1_2": [:, 5], "phenos2_1": [:, 6] "phenos2_2": [:, 7],
+						np.savetxt(fileHandle_B, df1, fmt='%.3f', delimiter=',') #save
 
 						#save summary data
-						write_data_to_output(fileHandle_A, [round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]) #rhfit was in the equation, but i removed. july 26
+						write_data_to_output(fileHandle_A, np.vstack(([round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2],names2))) #rhfit was in the equation, but i removed. july 26
 
 						#save phenos data
 						
