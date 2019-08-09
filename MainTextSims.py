@@ -317,12 +317,6 @@ def main():
 						[pop1, mut1] = [popfound, mut] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
 						[pop2, mut2] = [popfound, mut] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-						# mut1_1 = np.split(mut1, 2, axis = 0)[0]
-						# mut1_2 = np.split(mut1, 2, axis = 0)[0]
-
-						# mut2_1 = np.split(mut2, 2, axis = 0)[0]
-						# mut2_2 = np.split(mut2, 2, axis = 0)[0]
-
 						pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
 						pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
 
@@ -337,10 +331,6 @@ def main():
 
 						# run until maxgen
 						while gen < maxgen + 1:
-
-							# genotype to phenotype (haploid):
-							# phenos1 = np.dot(pop1, mut1) #sum mutations held by each individual (phenotype of the mutations)
-							# phenos2 = np.dot(pop2, mut2) #sum mutations held by each individual 
 
 							# genotype to phenotype (diploid):
 							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
@@ -390,22 +380,6 @@ def main():
 
 							# go to next generation
 							gen += 1
-
-						#parent fitness and load (use parent 1, but could be either)	
-						# parents = np.random.randint(len(pop1_overall), size = nHybrids)
-						
-						# pop1_chrom1 = np.split(pop1_overall, 2, axis = 0)[0]
-						# pop1_chrom2 = np.split(pop1_overall, 2, axis = 0)[1]
-						# pop1_overall = (pop1_chrom1 + pop1_chrom2) / 2 #effect of chromosomes averaged across loci. number of columns = number of loci 
-
-						# parent_phenos = np.dot(pop1_overall[parents], mut1)
-						#mean_parent_pheno = np.mean(parent_phenos, axis=0)
-						#parent_fitnesses = fitness(parent_phenos, mean_parent_pheno, sigma_adapt) #parent fitnesses
-						#pfit = np.mean(parent_fitnesses) #mean parent fitness
-
-						#make variables to hold offspring phenotypes
-						# offphenos = dict()
-						# offpheno = []
 
 						#HYBRIDIZATION - always choose parents from different populations 
 
@@ -499,47 +473,6 @@ def main():
 						column_names_phenos = ["phenos1_1", "phenos1_2", "phenos2_1", "phenos2_2", "hybrid_phenos1", "hybrid_phenos2"]
 						named_mean_phenos_data = np.column_stack((column_names_phenos, mean_phenos_data))
 
-						# #make each of nHybrids hybrids
-						# for k in range(nHybrids):
-						# 	# choose random parents
-						# 	randpar1 = pop1_overall[np.random.choice(len(pop1_overall))] 
-						# 	randpar2 = pop2_overall[np.random.choice(len(pop2_overall))]
-						# 	# get random parent phenotypes
-						# 	phenpar1 = np.dot(randpar1, mut1)
-						# 	phenpar2 = np.dot(randpar2, mut2)
-						# 	# get mutations held by random parents
-						# 	mutpar1 = mut1 * randpar1[:, None]
-						# 	mutpar2 = mut2 * randpar2[:, None]
-						# 	setA = set(tuple(x) for x in mutpar1)
-						# 	setB = set(tuple(x) for x in mutpar2)
-						# 	# find mutations shared by two parents (all in offspring)
-						# 	sharedmuts = np.array([x for x in setA & setB])
-						# 	if len(sharedmuts) < 1:
-						# 		sharedmuts = np.array([[0] * n]) #give something in case empty, parents don't share any mutations 
-						# 	# find mutations not shared by two parents
-						# 	unsharedmuts = np.array([x for x in setA ^ setB])
-						# 	# which unshared mutations in offspring (free recombination between all loci, therefore gets each with 0.5 probability)
-						# 	randmuts = np.random.randint(2, size = (len(unsharedmuts)))	
-						# 	unsharedoffmuts = unsharedmuts * randmuts[:, None]
-						# 	if len(unsharedoffmuts) < 1:
-						# 	    unsharedoffmuts = np.array([[0] * n]) #give something in case empty
-						# 	# offspring phenotype is collection of shared and random unshared mutations
-						# 	offpheno.append(sum(np.append(sharedmuts, unsharedoffmuts, axis = 0)))
-
-						#mean hybrid fitness
-						# hybrid_fitnesses = np.maximum(fitness(offpheno, theta1, sigma_adapt), fitness(offpheno, theta2, sigma_adapt)) #max fitness of hybrid, ie. gets fitness in parent enviro it is closest to
-						# hyfit = np.mean(hybrid_fitnesses) #mean fitness
-						# rhyfit = hyfit/pfit #relative fitness
-						# max_hyfit = np.percentile(hybrid_fitnesses, 95) # max fitness over all hybrids (90th percentile ie top 10 per cent)
-						# rel_max_hyfit = max_hyfit/pfit #max hybrid fitness relative to parental mean
-
-						# #lag load
-						# meanpheno = np.mean(offpheno, axis=0) #mean hybrid phenotype
-						# fitmeanpheno = np.mean(np.maximum(fitness(np.array([meanpheno]), theta1, sigma_adapt), fitness(np.array([meanpheno]), theta2, sigma_adapt)))/pfit #fitness of mean hybrid phenotype
-						# # lagload = -np.log(fitmeanpheno) #lag load
-						# Emeanpheno = np.mean(np.array([theta1, theta2]), axis=0)
-						# Efitmeanpheno = np.mean(fitness(np.array([Emeanpheno]), theta1, sigma_adapt))/pfit
-
 						# #save hybrid phenotype data (to make hybrid clouds)
 						pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno]) #, np.array([mean_phenos_data] * len(hybrid_pheno))]) #make hybrid phenotype data (with a bunch of identifiers in front of each phenotype)
 						names1 = np.array(["individuals", "reps", "angle", "opt_dist", "phenos1_1", "phenos1_2", "phenos2_1", "phenos2_2", "hybrid_phenos1", "hybrid_phenos2"])# column_names = np.array(['individuals', 'sigma', 'angle', '?', 'mut1_1', 'mut1_2'])
@@ -553,19 +486,11 @@ def main():
 						#save summary data
 						write_data_to_output(fileHandle_A, np.vstack(([round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2],names2))) #rhfit was in the equation, but i removed. july 26
 
-						#save phenos data
-						
-						
-
 						#print an update
 						print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1)) 
 
 						# go to next rep
 						rep += 1
-
-						# #plot mean and SD hybrid load over all replicates for this n_muts value
-						# plt.errorbar(n_mut_list[i], np.mean(hyloads), yerr=np.var(hyloads)**0.5, fmt='o', color='k')
-						# plt.pause(0.01)
 
 					#go to next optimum
 					j += 1
