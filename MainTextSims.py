@@ -3,10 +3,11 @@
 
 import numpy as np
 import time
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import csv
 import math
 import pandas as pd
+import matplotlib.animation as animation
 
 ######################################################################
 ##FUNCTIONS##
@@ -19,9 +20,10 @@ def open_output_files(n, N, alpha, u, sigma, data_dir):
 	"""
 	sim_id = 'n%d_N%d_alpha%.4f_u%.4f_sigma%.4f' %(n, N, alpha, u, sigma)
 	outfile_A = open("%ssummary_data%s.csv" %(data_dir, sim_id), "w") #summary data
-	outfile_B = open("%sphenotypes%s.csv" %(data_dir, sim_id),"w") #hybrid phenotypes
+	outfile_B = open("%sphenotypes%s.csv" %(data_dir, sim_id),"w") #hybrid phenotypes at the end 
+	# outfile_C = open("%shalfway%s.csv" %(data_dir, sim_id),"w") #print phenos halfway 
 
-	return [outfile_A, outfile_B]
+	return [outfile_A, outfile_B] # , outfile_C]
 
 def write_data_to_output(fileHandles, data):
 	"""
@@ -45,6 +47,12 @@ def fitness(phenos, theta, sigma):
 	dist = np.linalg.norm(phenos - theta, axis=1) #phenotypic distance from optimum
 	w = np.exp(-0.5 * sigma * dist**2) #fitness
 	return w
+
+def animate(i): 
+	pullData = open("sampleText.txt","r").read()
+	dataArray = pullData.split('\n')
+	xar = []
+	yar = []
 
 def shuffle_along_axis(a, axis):
 	idx = np.random.rand(*a.shape).argsort(axis = axis)
@@ -358,25 +366,24 @@ def main():
 							off2 = recomb(off2)
 
 							# mutation and population update
-
-							# pop1_genotype = off1
-							# pop2_genotype = off2
-
 							[pop1_genotype, pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
 							[pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
 							#create the dominance coefficient array (h)
 							#pick random numbers (float) between 0 and 1. pick as many as the number of rows. of mut. only 1 column.
 							#replace the values 0.5 with the h. 
-							h_pop1 = np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
+							h_pop1 = 1 #np.random.uniform(low = 0, high = 1, size = len(pop1_overall[pop1_overall == 0.5]))
 							pop1_overall[pop1_overall == 0.5] = h_pop1
 
-							h_pop2 = np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
+							h_pop2 = 1 # np.random.uniform(low = 0, high = 1, size = len(pop2_overall[pop2_overall == 0.5]))
 							pop2_overall[pop2_overall == 0.5] = h_pop2
 
 							# remove lost mutations (all zero columns in pop)
 							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
 							[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
+
+							# if gen = maxgen / 2: 
+
 
 							# go to next generation
 							gen += 1
@@ -454,7 +461,7 @@ def main():
 
 						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2)) #stack all hybrids phenos. each row is one individual. 
 						
-						h_hybrid = np.random.uniform(low = 0, high = 1, size = len(hybrid_overall_all[hybrid_overall_all == 0.5]))
+						h_hybrid = 1 # np.random.uniform(low = 0, high = 1, size = len(hybrid_overall_all[hybrid_overall_all == 0.5]))
 						hybrid_overall_all[hybrid_overall_all == 0.5] = h_hybrid
 
 						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
@@ -498,6 +505,7 @@ def main():
 				# cleanup
 				close_output_files(fileHandle_A)
 				close_output_files(fileHandle_B)
+				# close_output_files(fileHandle_C)
 
 				#next dimension
 				l += 1
