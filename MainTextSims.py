@@ -172,12 +172,37 @@ def mutate(off, u, alpha, n, mut):
 
 	mut = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
 
-	return [pop_genotype, pop_overall, mut]
+	# GENERATE THE h VALUES  
+	# generate h values, 2 decimal places
+	pop_h_value= np.round(np.random.uniform(low = 0, high = 1, size = len(newmuts + 1)).reshape(len(newmuts), 1), 2)
+
+	return [pop_h_value, pop_genotype, pop_overall, mut]
 
 def which_index(pop):
 	return np.array([
 		i for i in range(len(pop))
 		if pop[i] == False ])
+
+def add_h(pop_overall, pop_h_value):
+
+	pop_h_value_saved1 = np.append(pop_h_value_saved1, pop_h_value)
+	pop_h_value_saved = np.reshape(pop_h_value_saved1, (len(pop_h_value_saved1), 1))
+
+	# make a new array where all 0.5 are 0. 
+	pop_overall_zero = np.copy(pop_overall)
+	pop_overall_zero[pop_overall_zero == 0.5] = 0 
+
+	# make a new array where all 1 are 0. we will sum these later to have the overall again. 
+	pop_overall_h = np.copy(pop_overall) 
+	pop_overall_h[pop_overall_h == 1] = 0 
+
+	for x in range(0, np.shape(pop_overall_h)[1]):
+		if np.any(pop_overall_h[:, x] == 0.5) == True: 
+			pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h_value[x - 1]
+
+	pop_overall_summed = pop_overall_h + pop_overall_zero
+
+	return [pop_overall_summed, pop_h_value_saved]
 
 
 def remove_muts(pop, mut): #here pop is the same thing as off
@@ -222,7 +247,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [100] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.1 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
@@ -231,7 +256,7 @@ opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 2000 #total number of generations populations adapt for
+maxgen = 200 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -310,6 +335,16 @@ def main():
 						pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
 						pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 						
+						pop1_h = np.random.uniform(low = 0, high = 1, size = len(mut1)).reshape(len(mut1), 1)
+						pop2_h = np.random.uniform(low = 0, high = 1, size = len(mut2)).reshape(len(mut2), 1)
+
+						pop1_overall_summed = pop1_overall
+						pop2_overall_summed = pop2_overall
+
+						pop_h_value_saved1 = np.array([])
+
+						first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+
 						# intitialize generation counter
 						gen = 0
 
@@ -317,8 +352,8 @@ def main():
 						while gen < maxgen + 1:
 
 							# genotype to phenotype (diploid):
-							phenos1 = np.dot(pop1_overall, mut1) #sum mutations held by each individual
-							phenos2 = np.dot(pop2_overall, mut2) #sum mutations held by each individual
+							phenos1 = np.dot(pop1_overall_summed, mut1) #sum mutations held by each individual
+							phenos2 = np.dot(pop2_overall_summed, mut2) #sum mutations held by each individual
 
 							# phenotype to fitness
 							w1 = fitness(phenos1, theta1, sigma_adapt)
@@ -342,37 +377,39 @@ def main():
 							off2 = recomb(off2)
 
 							# mutation and population update
-							[pop1_genotype, pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
-							[pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
+							[pop1_h_value, pop1_genotype, pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
+							[pop2_h_value, pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
+
+							[pop1_overall_summed, pop1_h_value_saved] = add_h(pop1_overall, pop1_h_value)
+							[pop2_overall_summed, pop2_h_value_saved] = add_h(pop2_overall, pop2_h_value)
 
 							# remove lost mutations (all zero columns in pop)
 							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
 							[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
 
-
 							# go to next generation
 							gen += 1
 
-						# ADD h TO THE PARENTS  
-						# pop1_overall (parent1)
-						pop1_h = np.random.uniform(low = 0, high = 1, size = len(mut1)).reshape(len(mut1), 1)
+						# # ADD h TO THE PARENTS  
+						# # pop1_overall (parent1)
+						# pop1_h = np.random.uniform(low = 0, high = 1, size = len(mut1)).reshape(len(mut1), 1)
 						
-						x = 0 
-						while x < np.shape(pop1_overall)[1]:
-							if np.any(pop1_overall[:, x] == 0.5) == True: 
-								pop1_overall[:, x][pop1_overall[:, x] == 0.5] = pop1_h[x]
-							x+=1 
+						# x = 0 
+						# while x < np.shape(pop1_overall)[1]:
+						# 	if np.any(pop1_overall[:, x] == 0.5) == True: 
+						# 		pop1_overall[:, x][pop1_overall[:, x] == 0.5] = pop1_h[x]
+						# 	x+=1 
 
-						# pop2_overall (parent2)
-						pop2_h = np.random.uniform(low = 0, high = 1, size = len(mut2)).reshape(len(mut2), 1)
+						# # pop2_overall (parent2)
+						# pop2_h = np.random.uniform(low = 0, high = 1, size = len(mut2)).reshape(len(mut2), 1)
 
-						# idx = np.array([])
-						x = 0 
-						while x < np.shape(pop2_overall)[1]:
-							if np.any(pop2_overall[:, x] == 0.5) == True: 
-								pop2_overall[:, x][pop2_overall[:, x] == 0.5] = pop2_h[x]
-								# idx = np.append(idx, x)
-							x+=1 
+						# # idx = np.array([])
+						# x = 0 
+						# while x < np.shape(pop2_overall)[1]:
+						# 	if np.any(pop2_overall[:, x] == 0.5) == True: 
+						# 		pop2_overall[:, x][pop2_overall[:, x] == 0.5] = pop2_h[x]
+						# 		# idx = np.append(idx, x)
+						# 	x+=1 
 
 						# pop1_h = np.array([])
 						# x = 0 
@@ -467,14 +504,14 @@ def main():
 						hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2)) #stack all hybrids phenos. each row is one individual. 
 
 						#loop over the columns to assign h values, save the h values in h_values
-						h_values = np.array([])
-						x = 0 
-						while x < np.shape(hybrid_overall_all)[1]:
-							if np.any(hybrid_overall_all[:, x] == 0.5) == True: 
-								random_h = np.random.uniform(low = 0, high = 1, size = 1)
-								hybrid_overall_all[:, x][hybrid_overall_all[:, x] == 0.5] = random_h
-								h_values = np.append(h_values, random_h)
-							x+=1 
+						# hybrid_h_value = np.vstack((pop1_h_value, pop2_h_value))
+						# x = 0 
+						# while x < np.shape(hybrid_overall_all)[1]:
+						# 	if np.any(hybrid_overall_all[:, x] == 0.5) == True: 
+						# 		random_h = np.random.uniform(low = 0, high = 1, size = 1)
+						# 		hybrid_overall_all[:, x][hybrid_overall_all[:, x] == 0.5] = random_h
+						# 		h_values = np.append(h_values, random_h)
+						# 	x+=1 
 
 						hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
@@ -510,20 +547,10 @@ def main():
 						# write_data_to_output(fileHandle_A, np.array(([round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2]))) #rhfit was in the equation, but i removed. july 26
 						np.savetxt(fileHandle_A, sum_data, fmt =  '%.3f', delimiter=',')
 
-						# CREATE THE MUT SUMMARY (of parents)
-
-						#delete the first row of both mut matrices, it has the zeros 
-						# pop1_mut = np.delete(mut1,(0), axis=0)
-						# pop2_mut = np.delete(mut2,(0), axis=0)
-
+						# CREATE THE ADAPTATION SUMMARY (of parents)
 						one = np.ones(len(mut1)).reshape(len(mut1), 1)
 						two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
 						overall = np.vstack((one, two))
-
-						# delete the first column from both pop_overall matrices
-
-						# pop1_overall_new = np.delete(pop1_overall, (0), axis = 1)
-						# pop2_overall_new = np.delete(pop2_overall, (0), axis = 1)
 
 						pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
 						pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
