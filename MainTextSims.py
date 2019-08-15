@@ -175,7 +175,7 @@ def mutate(off, u, alpha, n, mut):
 	# GENERATE THE h VALUES  
 	# generate h values, 2 decimal places
 	pop_h_value= np.round(np.random.uniform(low = 0, high = 1, size = len(newmuts + 1)).reshape(len(newmuts), 1), 2)
-
+	
 	return [pop_h_value, pop_genotype, pop_overall, mut]
 
 def which_index(pop):
@@ -183,10 +183,7 @@ def which_index(pop):
 		i for i in range(len(pop))
 		if pop[i] == False ])
 
-def add_h(pop_overall, pop_h_value):
-
-	pop_h_value_saved1 = np.append(pop_h_value_saved1, pop_h_value)
-	pop_h_value_saved = np.reshape(pop_h_value_saved1, (len(pop_h_value_saved1), 1))
+def add_h(pop_overall, pop_h):
 
 	# make a new array where all 0.5 are 0. 
 	pop_overall_zero = np.copy(pop_overall)
@@ -197,12 +194,13 @@ def add_h(pop_overall, pop_h_value):
 	pop_overall_h[pop_overall_h == 1] = 0 
 
 	for x in range(0, np.shape(pop_overall_h)[1]):
-		if np.any(pop_overall_h[:, x] == 0.5) == True: 
-			pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h_value[x - 1]
+		if np.any(pop_overall_h == 0.5) == True: 
+			pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h[x - 1]
 
+	# pop_overall_summed is the same as pop_overall but only h values added 
 	pop_overall_summed = pop_overall_h + pop_overall_zero
 
-	return [pop_overall_summed, pop_h_value_saved]
+	return [pop_overall_summed]
 
 
 def remove_muts(pop, mut): #here pop is the same thing as off
@@ -334,16 +332,16 @@ def main():
 
 						pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
 						pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
-						
-						pop1_h = np.random.uniform(low = 0, high = 1, size = len(mut1)).reshape(len(mut1), 1)
-						pop2_h = np.random.uniform(low = 0, high = 1, size = len(mut2)).reshape(len(mut2), 1)
 
-						pop1_overall_summed = pop1_overall
-						pop2_overall_summed = pop2_overall
+						pop1_overall_summed = np.copy(pop1_overall)
+						pop2_overall_summed = np.copy(pop2_overall)
 
-						pop_h_value_saved1 = np.array([])
+						# this is the only time we use these first values 
+						pop1_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+						pop2_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
 
-						first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+						pop1_h = np.copy(pop1_first_h)
+						pop2_h = np.copy(pop2_first_h)
 
 						# intitialize generation counter
 						gen = 0
@@ -380,55 +378,19 @@ def main():
 							[pop1_h_value, pop1_genotype, pop1_overall, mut1] = mutate(off1, u_adapt, alpha_adapt, n, mut1)
 							[pop2_h_value, pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
-							[pop1_overall_summed, pop1_h_value_saved] = add_h(pop1_overall, pop1_h_value)
-							[pop2_overall_summed, pop2_h_value_saved] = add_h(pop2_overall, pop2_h_value)
-
+							# this the overall list where we save all the h values 
+							pop1_h = np.append(pop1_h, pop1_h_value)
+							pop2_h = np.append(pop2_h, pop2_h_value)
+							
 							# remove lost mutations (all zero columns in pop)
 							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
 							[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
+							
+							[pop1_overall_summed] = add_h(pop1_overall, pop1_h)
+							[pop2_overall_summed] = add_h(pop2_overall, pop2_h)
 
 							# go to next generation
 							gen += 1
-
-						# # ADD h TO THE PARENTS  
-						# # pop1_overall (parent1)
-						# pop1_h = np.random.uniform(low = 0, high = 1, size = len(mut1)).reshape(len(mut1), 1)
-						
-						# x = 0 
-						# while x < np.shape(pop1_overall)[1]:
-						# 	if np.any(pop1_overall[:, x] == 0.5) == True: 
-						# 		pop1_overall[:, x][pop1_overall[:, x] == 0.5] = pop1_h[x]
-						# 	x+=1 
-
-						# # pop2_overall (parent2)
-						# pop2_h = np.random.uniform(low = 0, high = 1, size = len(mut2)).reshape(len(mut2), 1)
-
-						# # idx = np.array([])
-						# x = 0 
-						# while x < np.shape(pop2_overall)[1]:
-						# 	if np.any(pop2_overall[:, x] == 0.5) == True: 
-						# 		pop2_overall[:, x][pop2_overall[:, x] == 0.5] = pop2_h[x]
-						# 		# idx = np.append(idx, x)
-						# 	x+=1 
-
-						# pop1_h = np.array([])
-						# x = 0 
-						# while x < np.shape(pop1_overall)[1]:
-						# 	if np.any(pop1_overall[:, x] == 0.5) == True: 
-						# 		random_h_1 = np.random.uniform(low = 0, high = 1, size = 1)
-						# 		pop1_overall[:, x][pop1_overall[:, x] == 0.5] = random_h_1
-						# 		pop1_h = np.append(pop1_h, random_h_1)
-						# 	x+=1 
-
-						# # pop2_overall (parent2)
-						# pop2_h = np.array([])
-						# x = 0 
-						# while x < np.shape(pop2_overall)[1]:
-						# 	if np.any(pop2_overall[:, x] == 0.5) == True: 
-						# 		random_h_2 = np.random.uniform(low = 0, high = 1, size = 1)
-						# 		pop2_overall[:, x][pop2_overall[:, x] == 0.5] = random_h_2
-						# 		pop2_h = np.append(pop2_h, random_h_2)
-						# 	x+=1 
 
 						#HYBRIDIZATION - always choose parents from different populations 
 
