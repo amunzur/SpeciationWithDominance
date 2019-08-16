@@ -194,8 +194,7 @@ def add_h(pop_overall, pop_h):
 	pop_overall_h[pop_overall_h == 1] = 0 
 
 	for x in range(0, np.shape(pop_overall_h)[1]):
-		if np.any(pop_overall_h == 0.5) == True: 
-			pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h[x - 1]
+		pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h[x - 1]
 
 	# pop_overall_summed is the same as pop_overall but only h values added 
 	pop_overall_summed = pop_overall_h + pop_overall_zero
@@ -231,7 +230,7 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 
 	pop_overall = (pop_chrom1 + pop_chrom2) / 2 
 	
-	return[pop_chrom1, pop_chrom2, pop_genotype, pop_overall, mut]
+	return[pop_chrom1, pop_chrom2, pop_genotype, pop_overall, mut, remove]
 
 ######################################################################
 ##UNIVERSAL PARAMETERS##
@@ -245,7 +244,7 @@ data_dir = 'data'
 ##PARAMETERS FOR ADAPTING POPULATIONS##
 ######################################################################
 
-N_adapts = [100] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapt = 0.1 #mutational sd (positive real number)
 u_adapt = 0.1 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
@@ -254,7 +253,7 @@ opt_dist = 1 #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 200 #total number of generations populations adapt for
+maxgen = 500 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -383,11 +382,15 @@ def main():
 							pop2_h = np.append(pop2_h, pop2_h_value)
 							
 							# remove lost mutations (all zero columns in pop)
-							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1] = remove_muts(pop1_genotype, mut1)
-							[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2] = remove_muts(pop2_genotype, mut2)
+							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
+							[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2, remove2] = remove_muts(pop2_genotype, mut2)
 							
 							[pop1_overall_summed] = add_h(pop1_overall, pop1_h)
 							[pop2_overall_summed] = add_h(pop2_overall, pop2_h)
+
+							pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix 
+							pop2_h = np.delete(pop2_h, remove2, 0)
+
 
 							# go to next generation
 							gen += 1
@@ -513,20 +516,27 @@ def main():
 						one = np.ones(len(mut1)).reshape(len(mut1), 1)
 						two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
 						overall = np.vstack((one, two))
+						# overall = np.vstack(("population", overall1))
 
 						pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
 						pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
 						freq_overall = np.vstack((pop1_freq, pop2_freq))
+						# freq_overall = np.vstack(("frequency" ,freq_overall1))
 						
 						pop1_mut_n1 = mut1[:, 0].reshape(np.shape(mut1)[0], 1)
 						pop2_mut_n1 = mut2[:, 0].reshape(np.shape(mut2)[0], 1)
 						mut_n1_overall = np.vstack((pop1_mut_n1, pop2_mut_n1))
+						# mut_n1_overall = np.vstack(("n1" ,mut_n1_overall1))
+
 						
 						pop1_mut_n2 = mut1[:, 1].reshape(np.shape(mut1)[0], 1)
 						pop2_mut_n2 = mut2[:, 1].reshape(np.shape(mut2)[0], 1)
 						mut_n2_overall = np.vstack((pop1_mut_n2, pop2_mut_n2))
+						# mut_n2_overall = np.vstack(("n2", mut_n2_overall1))
 
-						h_overall = np.vstack((pop1_h.reshape(len(pop1_h), 1), pop2_h.reshape(len(pop2_h), 1)))
+						h_overall= np.vstack((pop1_h.reshape(len(pop1_h), 1), pop2_h.reshape(len(pop2_h), 1)))
+						# h_overall = np.vstack(("h value", h_overall1))
+
 
 						# SAVE THE MUT SUMMARY
 						np.savetxt(fileHandle_C, np.column_stack((overall, freq_overall, mut_n1_overall, mut_n2_overall, h_overall)), fmt =  '%.3f', delimiter=',')
