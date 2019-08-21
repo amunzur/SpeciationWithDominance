@@ -49,11 +49,11 @@ def fitness(phenos, theta, sigma):
 	w = np.exp(-0.5 * sigma * dist**2) #fitness
 	return w
 
-def animate(i): 
-	pullData = open("sampleText.txt","r").read()
-	dataArray = pullData.split('\n')
-	xar = []
-	yar = []
+# def animate(i): 
+	# pullData = open("sampleText.txt","r").read()
+	# dataArray = pullData.split('\n')
+	# xar = []
+	# yar = []
 
 def shuffle_along_axis(a, axis):
 	idx = np.random.rand(*a.shape).argsort(axis = axis)
@@ -240,20 +240,16 @@ nreps = 1 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 data_dir = 'data'
 
-######################################################################
-##PARAMETERS FOR ADAPTING POPULATIONS##
-######################################################################
-
 N_adapts = [1000] #number of diploid individuals (positive integer)
-alpha_adapt = 0.1 #mutational sd (positive real number)
-u_adapt = 0.1 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
+alpha_adapt = 0.5 #mutational sd (positive real number)
+u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
 
 opt_dist = 1 #distance to optima
 
-n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 500 #total number of generations populations adapt for
+maxgen = 2000 #total number of generations populations adapt for
 
 # dominance = ['no_dom', 'variable']
 
@@ -336,11 +332,11 @@ def main():
 						pop2_overall_summed = np.copy(pop2_overall)
 
 						# this is the only time we use these first values 
-						pop1_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
-						pop2_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+						# pop1_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+						# pop2_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
 
-						pop1_h = np.copy(pop1_first_h)
-						pop2_h = np.copy(pop2_first_h)
+						# pop1_h = np.copy(pop1_first_h)
+						# pop2_h = np.copy(pop2_first_h)
 
 						# intitialize generation counter
 						gen = 0
@@ -378,8 +374,11 @@ def main():
 							[pop2_h_value, pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
 							# this the overall list where we save all the h values 
-							pop1_h = np.append(pop1_h, pop1_h_value)
-							pop2_h = np.append(pop2_h, pop2_h_value)
+							# pop1_h = np.append(pop1_h, pop1_h_value)
+							# pop2_h = np.append(pop2_h, pop2_h_value)
+
+							pop1_h = np.repeat(0.5, len(mut1))
+							pop2_h = np.repeat(0.5, len(mut2))
 							
 							# remove lost mutations (all zero columns in pop)
 							[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
