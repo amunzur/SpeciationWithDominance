@@ -200,9 +200,8 @@ def add_h(pop_overall, pop_h, h):
 
 	return [pop_overall_summed]
 
-# def add_h_integer()
 
-def remove_muts(pop, mut): #here pop is the same thing as off
+def remove_muts(pop_genotype, mut): #here pop is the same thing as off
 	"""
 	This function creates mutations and updates population
 	"""
@@ -210,8 +209,8 @@ def remove_muts(pop, mut): #here pop is the same thing as off
 	mut = np.array(mut)
 
 	#split the pop into chrom1 and chrom2. 
-	pop_chrom1 = np.split(pop, 2, axis = 1)[0]
-	pop_chrom2 = np.split(pop, 2, axis = 1)[1]
+	pop_chrom1 = np.split(pop_genotype, 2, axis = 1)[0]
+	pop_chrom2 = np.split(pop_genotype, 2, axis = 1)[1]
 
 	chrom1_zero = np.where(~pop_chrom1.any(axis = 0))[0] #find the columns that are all zeros
 	chrom2_zero = np.where(~pop_chrom2.any(axis = 0))[0]
@@ -240,18 +239,18 @@ nreps = 1 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 data_dir = 'data'
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [100] #number of diploid individuals (positive integer)
 alpha_adapt = 0.5 #mutational sd (positive real number)
 u_adapt = 0.001 #mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
 sigma_adapts = [1] #selection strengths
 
 opt_dist = 1 #distance to optima
 
-n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
 maxgen = 200 #total number of generations populations adapt for
 
-dom = [0, 1, 0.5, "variable"]
+dom = [0, 1, 0.5]
 
 ######################################################################
 ##PARAMETERS FOR HYBRIDS##
@@ -271,44 +270,44 @@ def main():
 	while i_N < len(N_adapts):
 		N_adapt = N_adapts[i_N]
 
-		#loop over selection strength
-		i_sigma = 0
-		while i_sigma < len(sigma_adapts):
-			sigma_adapt = sigma_adapts[i_sigma]
+		#loop over h values
+		i_dom = 0 
+		while i_dom < len(dom):
+			h = dom[i_dom]
 
-			#loop over dimensions
-			l = 0
-			while l < len(ns):
-				n = ns[l]
+			#loop over selection strength
+			i_sigma = 0
+			while i_sigma < len(sigma_adapts):
+				sigma_adapt = sigma_adapts[i_sigma]
 
-				#set n-dependent parameters
-				theta1 = np.append(opt_dist,[0]*(n-1)) #set one optima to be fixed
-				angles = [math.pi*x/(n_angles-1) for x in range(n_angles)] #angles to use (in radians)
-				if n == 2:
-					theta2_list = np.array([[opt_dist*math.cos(x), opt_dist*math.sin(x)] for x in angles]) #optima to use
-				elif n > 2:
-					theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
+				#loop over dimensions
+				l = 0
+				while l < len(ns):
+					n = ns[l]
 
-				# open output files
-				[fileHandle_A, fileHandle_B, fileHandle_C] = open_output_files(n, N_adapt, alpha_adapt, u_adapt, sigma_adapt, data_dir)
+					#set n-dependent parameters
+					theta1 = np.append(opt_dist,[0]*(n-1)) #set one optima to be fixed
+					angles = [math.pi*x/(n_angles-1) for x in range(n_angles)] #angles to use (in radians)
+					if n == 2:
+						theta2_list = np.array([[opt_dist*math.cos(x), opt_dist*math.sin(x)] for x in angles]) #optima to use
+					elif n > 2:
+						theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
 
-				#loop over optima
-				j = 0
-				while j < len(theta2_list):
-					
-					#set optima
-					theta2 = theta2_list[j]
+					# open output files
+					[fileHandle_A, fileHandle_B, fileHandle_C] = open_output_files(n, N_adapt, alpha_adapt, u_adapt, sigma_adapt, data_dir)
+				
+					#loop over optima
+					j = 0
+					while j < len(theta2_list):
+						
+						#set optima
+						theta2 = theta2_list[j]
 
-					# #set up plot of hybrid load versus number of ancestral mutations (n_muts)
-					# plt.axis([0, max(n_mut_list)+1, 0, 0.1])
-					# plt.ylabel('hybrid load at generation %d (mean $\pm$ SD of %d replicates)' %(maxgen,nreps))
-					# plt.xlabel('number of ancestral mutations')
-					# plt.ion()
-
-					#loop over h values 
-					i_dom = 0 
-					while i_dom < len(dom):
-						h = dom[i_dom] 
+						# #set up plot of hybrid load versus number of ancestral mutations (n_muts)
+						# plt.axis([0, max(n_mut_list)+1, 0, 0.1])
+						# plt.ylabel('hybrid load at generation %d (mean $\pm$ SD of %d replicates)' %(maxgen,nreps))
+						# plt.xlabel('number of ancestral mutations')
+						# plt.ion()
 
 						#loop over all replicates
 						rep = 0
@@ -345,7 +344,7 @@ def main():
 								pop2_h = np.copy(pop2_first_h)
 
 							else: 
-								# h is an integer and not picked from random distribution 
+								# h is an integer and not picked from random distribution. attach the first h value to the pop_h matrices 
 								pop1_h = h
 								pop2_h = h 
 
@@ -385,16 +384,27 @@ def main():
 								[pop2_newmuts, pop2_genotype, pop2_overall, mut2] = mutate(off2, u_adapt, alpha_adapt, n, mut2)
 
 								if h == "variable":
+									# generate new h values
 									pop1_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop1_newmuts + 1)).reshape(len(pop1_newmuts), 1), 2)
 									pop2_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop2_newmuts + 1)).reshape(len(pop2_newmuts), 1), 2)
 
 									# this the overall list where we save all the h values 
 									pop1_h = np.append(pop1_h, pop1_h_value)
+									pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
+									
 									pop2_h = np.append(pop2_h, pop2_h_value)
+									pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
 
 								else:
-									pop1_h = h
-									pop2_h = h
+									pop1_h = np.append(pop1_h, np.repeat(h, len(pop1_newmuts)))
+
+									# pop1_h = np.append(pop1_h, h)  
+									pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column
+
+									pop2_h = np.append(pop2_h, np.repeat(h, len(pop2_newmuts)))
+
+									# pop2_h = np.append(pop2_h, h) 
+									pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column
 								
 								# remove lost mutations (all zero columns in pop)
 								[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
@@ -409,10 +419,47 @@ def main():
 								# go to next generation
 								gen += 1
 
+								#############################################
+								# CREATE THE ADAPTATION SUMMARY (of parents)
+								#############################################
+								
+								one = np.ones(len(mut1)).reshape(len(mut1), 1)
+								two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
+								pop1_or_pop2 = np.vstack((one, two))
+
+								pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
+								pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
+								freq_overall = np.round(np.vstack((pop1_freq, pop2_freq)), 4)
+								
+								pop1_mut_n1 = mut1[:, 0].reshape(np.shape(mut1)[0], 1)
+								pop2_mut_n1 = mut2[:, 0].reshape(np.shape(mut2)[0], 1)
+								mut_n1_overall = np.round(np.vstack((pop1_mut_n1, pop2_mut_n1)), 3)
+								
+								pop1_mut_n2 = mut1[:, 1].reshape(np.shape(mut1)[0], 1)
+								pop2_mut_n2 = mut2[:, 1].reshape(np.shape(mut2)[0], 1)
+								mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3)
+
+								h_overall = np.vstack((pop1_h, pop2_h))
+								
+								if h == 0:
+									adapt_summary_0 = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
+
+								elif h == 1:
+									adapt_summary_1 = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
+
+								elif h == 0.5:
+									adapt_summary_half = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
+
+								else:
+									adapt_summary_variable = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
+
+								# SAVE THE MUT SUMMARY
+							# adapt_summary = np.vstack((adapt_summary_0, adapt_summary_1, adapt_summary_half, adapt_summary_variable))
+							# np.savetxt(fileHandle_C, adapt_summary, fmt =  '%.3f', delimiter=',', header='pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall')
+
 							#HYBRIDIZATION - always choose parents from different populations 
 
 							#genotype of hybrids
-
 							pop1_chrom1 = pop1_genotype[0]
 							pop1_chrom2 = pop1_genotype[1]
 
@@ -485,56 +532,79 @@ def main():
 							hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
 							# find the mean phenos of each column 
-							phenos1_1 = (np.sum(phenos1, axis = 0)[0]) / len(phenos1)
-							phenos1_2 = (np.sum(phenos1, axis = 0)[1]) / len(phenos1)
+							phenos1_1 = np.round((np.sum(phenos1, axis = 0)[0]) / len(phenos1), 3)
+							phenos1_2 = np.round((np.sum(phenos1, axis = 0)[1]) / len(phenos1), 3)
 
-							phenos2_1 = (np.sum(phenos2, axis = 0)[0]) / len(phenos2)
-							phenos2_2 = (np.sum(phenos2, axis = 0)[1]) / len(phenos2)
+							phenos2_1 = np.round((np.sum(phenos2, axis = 0)[0]) / len(phenos2), 3)
+							phenos2_2 = np.round((np.sum(phenos2, axis = 0)[1]) / len(phenos2), 3)
 
 							hybrid_phenos1 = np.round((np.sum(hybrid_pheno, axis = 0)[0]) / len(hybrid_pheno), 3)
 							hybrid_phenos2 = np.round((np.sum(hybrid_pheno, axis = 0)[1]) / len(hybrid_pheno), 3)
 
-							# #save hybrid phenotype data, we will then use this matrix to make the dictionary
+							
+							#this saves the results of each loop to for the summary matrix, we then combine them all to create the summary matrix  
+							if h == 0:
+								# save the h values as many tiomes as the number of rows of the summary matrix
+								h_mat0 = np.repeat(h, n_angles)
+								# reshape the h column of the summary matrix 
+								h_mat0 = np.reshape(h_mat0, (len(h_mat0), 1))
+								# attach the h column to the summary matrix of the related loop
+								summary_0 = np.column_stack((phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, h_mat0))
+
+							elif h == 1:
+								h_mat1 = np.repeat(h, n_angles)
+								h_mat1 = np.reshape(h_mat1, (len(h_mat1), 1))
+								summary_1 = np.column_stack((phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, h_mat1))
+
+							elif h == 0.5:
+								h_mat05 = np.repeat(h, n_angles)
+								h_mat05 = np.reshape(h_mat05, (len(h_mat05), 1))
+								summary_half = np.column_stack((phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, h_mat05))
+
+							else:
+								h_matvar= np.repeat(h, n_angles)
+								h_matvar = np.reshape(h_matvar, (len(h_matvar), 1))
+								summary_variable = np.column_stack((phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, h_matvar))
+
+							# save pheno data 
 							pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), hybrid_pheno])
-
-
-							#make a new directory 
-							# path = os.getcwd() + '/n%d_N%d_maxgen%d_alpha%.4f_u%.4f_sigma%.2f' %(n, N_adapts[0], maxgen, alpha_adapt, u_adapt, sigma_adapts[0])
-							# os.mkdir(path)
-							# os.chdir(path)
 							np.savetxt(fileHandle_B, pheno_data, fmt='%.3f', delimiter=',', header='individuals, reps, angle, opt_dist, hybrid_phenos1, hybrid_phenos2')
 
 							# save summary data
-							sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2])))
 							
-							# write_data_to_output(fileHandle_A, np.array(([round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2]))) #rhfit was in the equation, but i removed. july 26
-							np.savetxt(fileHandle_A, sum_data, fmt =  '%.3f', delimiter=',', header = 'angle, reps, opt_dist, phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2')
+							# #############################################
+							# # CREATE THE ADAPTATION SUMMARY (of parents)
+							# #############################################
 
-							#############################################
-							# CREATE THE ADAPTATION SUMMARY (of parents)
-							#############################################
+							# one = np.ones(len(mut1)).reshape(len(mut1), 1)
+							# two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
+							# pop1_or_pop2 = np.vstack((one, two))
 
-							one = np.ones(len(mut1)).reshape(len(mut1), 1)
-							two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
-							pop1_or_pop2 = np.vstack((one, two)).tolist()
-
-							pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
-							pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
-							freq_overall = np.round(np.vstack((pop1_freq, pop2_freq)), 4).tolist()
+							# pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
+							# pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
+							# freq_overall = np.round(np.vstack((pop1_freq, pop2_freq)), 4)
 							
-							pop1_mut_n1 = mut1[:, 0].reshape(np.shape(mut1)[0], 1)
-							pop2_mut_n1 = mut2[:, 0].reshape(np.shape(mut2)[0], 1)
-							mut_n1_overall = np.round(np.vstack((pop1_mut_n1, pop2_mut_n1)), 3).tolist()
+							# pop1_mut_n1 = mut1[:, 0].reshape(np.shape(mut1)[0], 1)
+							# pop2_mut_n1 = mut2[:, 0].reshape(np.shape(mut2)[0], 1)
+							# mut_n1_overall = np.round(np.vstack((pop1_mut_n1, pop2_mut_n1)), 3)
 							
-							pop1_mut_n2 = mut1[:, 1].reshape(np.shape(mut1)[0], 1)
-							pop2_mut_n2 = mut2[:, 1].reshape(np.shape(mut2)[0], 1)
-							mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3).tolist()
+							# pop1_mut_n2 = mut1[:, 1].reshape(np.shape(mut1)[0], 1)
+							# pop2_mut_n2 = mut2[:, 1].reshape(np.shape(mut2)[0], 1)
+							# mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3)
 
-							if h == ['variable']:
-								h_overall = np.vstack((pop1_h.reshape(len(pop1_h), 1), pop2_h.reshape(len(pop2_h), 1))).tolist()
-							else: 
-								# h_overall = np.vstack((np.repeat(pop1_h, mut1).reshape(mut1, 1), np.repeat(pop2_h, mut2).reshape(mut2, 1)))
-								lol = np.reshape(pop1_h, (mut1, 1))
+							# h_overall = np.vstack((pop1_h, pop2_h))
+
+							# # # SAVE THE MUT SUMMARY
+							# adapt_summary = np.vstack((adapt_summary_0, adapt_summary_1, adapt_summary_half, adapt_summary_variable))
+							# np.savetxt(fileHandle_C, adapt_summary, fmt =  '%.3f', delimiter=',', header='pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall')
+
+							# if h == ['variable']:
+							# 	h_overall = np.vstack((pop1_h, pop2_h)) 
+							# else: 
+							# 	# h_overall = np.vstack((np.repeat(pop1_h, mut1).reshape(mut1, 1), np.repeat(pop2_h, mut2).reshape(mut2, 1)))
+							# 	# pop1_h_list = np.repeat(pop1_h, len(mut1)).reshape(len(mut1), 1)
+							# 	# pop2_h_list = np.repeat(pop2_h, len(mut2)).reshape(len(mut2), 1)
+							# 	h_overall = np.vstack((pop1_h, pop2_h))
 
 							# # create dictionary of adaptation data to save is as a pandas data frame later 
 							# adapt_dict = {'pop1_or_pop2': pop1_or_pop2, 'freq_overall': freq_overall, 'mut_n1_overall': mut_n1_overall, 'mut_n2_overall': mut_n2_overall, 'h_overall': h_overall}
@@ -552,35 +622,51 @@ def main():
 							# # save the dataframe to the directory as a csv file 
 							# adaptation.to_csv('/Users/student/Desktop/asli/adaptation.csv')
 
-							# SAVE THE MUT SUMMARY
-							np.savetxt(fileHandle_C, np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall)), fmt =  '%.3f', delimiter=',', header='pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall')
+							
 							# np.savetxt(fileHandle_C, np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall)), fmt =  '%.3f', delimiter=',')
 
 							#print an update
-							print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1)) 
+							if h == ['variable']:
+								print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d, h= %d' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1, h)) 
+							else:
+								print('N = %d, sigma = %.2f, n=%d, angle=%r, rep=%d, h= %s' %(N_adapt, sigma_adapt, n, round(angles[j]*180/math.pi,2), rep+1, h)) 
+							# print(pop1_or_pop2, np.shape(pop1_or_pop2))
+							# print(freq_overall, np.shape(freq_overall))
+							# print(mut_n1_overall, np.shape(mut_n1_overall))
 
-						# go to next rep
-						rep += 1
+							# go to next rep
+							rep += 1
 
-					#go to the next h value 
-					i_dom += 1 
+						#go to next optimum
+						j += 1
 
-				#go to next optimum
-				j += 1
+					# cleanup
+					
+					close_output_files(fileHandle_B)
+					
+					#next dimension
+					l += 1
 
-			# cleanup
-			close_output_files(fileHandle_A)
-			close_output_files(fileHandle_B)
-			close_output_files(fileHandle_C)
+				#go to next sigma value
+				i_sigma += 1
 
-			#next dimension
-			l += 1
+			#go to the next h value 
+			i_dom += 1
 
-		#go to next sigma value
-		i_sigma += 1
+		#go to next N value
+		i_N += 1
 
-	#go to next N value
-	i_N += 1
+		# SAVE THE MUT SUMMARY
+		adapt_summary = np.vstack((adapt_summary_0, adapt_summary_1, adapt_summary_half))
+		np.savetxt(fileHandle_C, adapt_summary, fmt =  '%.3f', delimiter=',', header='pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall')
+		close_output_files(fileHandle_C)
+
+		h_saved = np.column_stack(summary_0, summary_1, summary_half)
+		sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, opt_dist * (2*(1-math.cos(angles[j])))**(0.5), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, h])))
+		np.savetxt(fileHandle_A, sum_data, fmt =  '%.3f', delimiter=',', header = 'angle, reps, opt_dist, phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, h')
+		close_output_files(fileHandle_A)
+
+
 
 ######################################################################
 ##RUNNING ADAPTATION FUNCTION##
