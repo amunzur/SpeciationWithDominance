@@ -497,54 +497,22 @@ def main():
 											pop1nmutslist = np.append(pop1nmutslist, pop1nmuts)
 											pop2nmutslist = np.append(pop2nmutslist, pop2nmuts)
 
+											
+
 											#DEALING WITH h VALUES WHEN PE IS OFF, NORMAL. we will do the case with h pe later on, in hybridization. 
 											if pevo_adapt == 'off': #pevo is off, no PE
 
 												pop1_h = generate_h(h, pop1_h, pop1_newmuts)
 												pop2_h = generate_h(h, pop2_h, pop2_newmuts)
 
-												# if h == 9: #h is random
-												# 	# generate new h values
-												# 	pop1_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop1_newmuts + 1)).reshape(len(pop1_newmuts), 1), 2)
-												# 	pop2_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop2_newmuts + 1)).reshape(len(pop2_newmuts), 1), 2)
-
-												# 	# this the overall list where we save all the h values 
-												# 	pop1_h = np.append(pop1_h, pop1_h_value)
-												# 	pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
-													
-												# 	pop2_h = np.append(pop2_h, pop2_h_value)
-												# 	pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
-
-												# elif h == 'options': #h is 0, 1 or 0.5
-												# 	# generate new h values
-												# 	pop1_h_value = np.round(np.random.choice(options, len(pop1_newmuts)).reshape(len(pop1_newmuts), 1), 2)
-												# 	pop2_h_value = np.round(np.random.choice(options, len(pop2_newmuts)).reshape(len(pop2_newmuts), 1), 2)
-
-												# 	# this the overall list where we save all the h values 
-												# 	pop1_h = np.append(pop1_h, pop1_h_value)
-												# 	pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
-													
-												# 	pop2_h = np.append(pop2_h, pop2_h_value)
-												# 	pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
-
-												# else: #h is 0.5 
-												# 	pop1_h = np.append(pop1_h, np.repeat(h, len(pop1_newmuts))) 
-												# 	pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column
-
-												# 	pop2_h = np.append(pop2_h, np.repeat(h, len(pop2_newmuts)))
-												# 	pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column
-
 											else: #if there is PE
 
 												if h == 9: #h is random
+													
 													if np.sum(pop1nmuts) == 0: # if this is the first mutation we generate 
+														
 														pop1_new_h = hlist[0: pop1nmuts]
 														pop2_new_h = hlist[0: pop2nmuts]
-														# print('pop1nmuts')
-														# print(pop1nmuts)
-														# print('pop1_newmuts')
-														# print(pop1_newmuts)
-														# print(mut1)
 
 														#append these to the collection matrices for each pop
 														pevo_pop1_hlist = np.append(pevo_pop1_hlist, pop1_new_h)
@@ -557,43 +525,20 @@ def main():
 											
 											if pevo_adapt == 'off':
 
-												# print('pop1_overall')
-												# print(pop1_overall)
-												# print('pevo_pop1_hlist')
-												# print(pevo_pop1_hlist)
-												# print('pop1_overall_summed')
-												# print(pop1_overall_summed)
-
-												# pick the h values from the matrix 
+												# pick the h values from the matrix
+												pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
+												pop2_h = np.delete(pop2_h, remove2, 0)  										
 												
-
 												[pop1_overall_summed] = add_h(pop1_overall, pop1_h, h)
 												[pop2_overall_summed] = add_h(pop2_overall, pop2_h, h)
 
-
-
-												# print('pop1nmuts')
-												# print(pop1nmuts)
-												# print('pop1_newmuts')
-												# print(pop1_newmuts)
-												# print(mut1)
-
-
-												# # add the h values normally, just this time use the pregenerated h values matrix 
-												# [pop1_overall_summed] = add_h(pop1_overall, pevo_pop1_hlist, h)
-												# [pop2_overall_summed] = add_h(pop2_overall, pevo_pop2_hlist, h)
-
 											else: #if there is pevo
-
-												# print('pop1_overall')
-												# print(pop1_overall)
-												# print('pevo_pop1_hlist')
-												# print(pevo_pop1_hlist)
-												# print('pop1_overall_summed')
-												# print(pop1_overall_summed)
 
 												pevo_pop1_hlist = pick_h(pop1nmuts, pop1_newmuts, pevo_pop1_hlist, hlist)
 												pevo_pop2_hlist = pick_h(pop2nmuts, pop2_newmuts, pevo_pop2_hlist, hlist)
+
+												pevo_pop1_hlist = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
+												pevo_pop2_hlist = np.delete(pop2_h, remove2, 0)
 
 											# go to next generation
 											gen += 1
