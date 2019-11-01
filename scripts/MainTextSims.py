@@ -190,7 +190,7 @@ def which_index(pop):
 
 def add_h(pop_overall, pop_h, h):
  
-	if h == "variable" or "options":
+	if h == 9 or "options":
 		# make a new array where all 0.5 are 0. 
 		pop_overall_zero = np.copy(pop_overall)
 		pop_overall_zero[pop_overall_zero == 0.5] = 0 
@@ -199,11 +199,16 @@ def add_h(pop_overall, pop_h, h):
 		pop_overall_h = np.copy(pop_overall) 
 		pop_overall_h[pop_overall_h == 1] = 0 
 
-		for x in range(0, np.shape(pop_overall_h)[1]):
-			pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h[x - 1]
+		if np.any(pop_overall_h == 0.5) is True:
+			
+			for x in range(0, np.shape(pop_overall_h)[1]):
+				pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h[x - 1]
 
-		# pop_overall_summed is the same as pop_overall but only h values added 
-		pop_overall_summed = pop_overall_h + pop_overall_zero
+				pop_overall_summed = pop_overall_h + pop_overall_zero
+		else:
+
+			# pop_overall_summed is the same as pop_overall but only h values added 
+			pop_overall_summed = pop_overall_h + pop_overall_zero
 
 	else:
 		pop_overall_summed = np.copy(pop_overall)
@@ -211,6 +216,17 @@ def add_h(pop_overall, pop_h, h):
 
 	return [pop_overall_summed]
 
+def pick_h(popnmuts, popnewmuts, pevo_pop_hlist, hlist):
+
+	if np.sum(popnmuts) == 0: #if we haven't generated any mutations yet (if this is the 1st time we are calling the mut function) just pick the first n rows from the mut matrix 
+		pop_new_h = hlist[0: popnmuts] #mutlist is the main mutation array we generate in the beginning and pick from later on. for the 1st generation, pick the first nmuts rows. 
+
+	else: #if we already generated mutations before, meaning if this isnt the 1st generation
+		pop_new_h = hlist[int(np.sum(popnmuts)): int(np.sum(popnmuts)) + popnewmuts] 
+
+	pevo_pop_hlist = np.append(pevo_pop_hlist, pop_new_h)
+
+	return pevo_pop_hlist
 
 def remove_muts(pop_genotype, mut): #here pop is the same thing as off
 	"""
@@ -242,6 +258,7 @@ def remove_muts(pop_genotype, mut): #here pop is the same thing as off
 	
 	return[pop_chrom1, pop_chrom2, pop_genotype, pop_overall, mut, remove]
 
+
 ######################################################################
 ##UNIVERSAL PARAMETERS##
 ######################################################################
@@ -267,9 +284,9 @@ maxgen = 10 #total number of generations populations adapt for
 
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
-dom = [9, 0.5]
+dom = [9]
 
-pevo = ['on'] #this is parallel evolution. either on or off. 
+pevo = ['off'] #this is parallel evolution. either on or off. 
 
 ######################################################################
 ##PARAMETERS FOR HYBRIDS##
@@ -408,6 +425,9 @@ def main():
 										pop1nmutslist = np.array([])
 										pop2nmutslist = np.array([])
 
+										pevo_pop1_hlist = np.array([])
+										pevo_pop2_hlist = np.array([])
+
 										# intitialize generation counter
 										gen = 0
 
@@ -442,6 +462,8 @@ def main():
 
 											# generate the mut array 
 											mutlist = np.random.normal(1, 1, 6000).reshape(3000, n) #create the list of mutations to pick from later on in PE 
+											# generate the h values array
+											hlist = np.round(np.random.uniform(0, 1, 3000).reshape(3000, 1), 2)
 
 											# mutation and population update
 											[pop1_newmuts, pop1_genotype, pop1_overall, mut1, pop1nmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist)
@@ -450,47 +472,78 @@ def main():
 											pop1nmutslist = np.append(pop1nmutslist, pop1nmuts)
 											pop2nmutslist = np.append(pop2nmutslist, pop2nmuts)
 
-											if h == 9:
-												# generate new h values
-												pop1_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop1_newmuts + 1)).reshape(len(pop1_newmuts), 1), 2)
-												pop2_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop2_newmuts + 1)).reshape(len(pop2_newmuts), 1), 2)
+											#DEALING WITH h VALUES WHEN PE IS OFF, NORMAL. we will do the case with h pe later on, in hybridization. 
+											if pevo_adapt == 'off': #pevo is off, no PE
 
-												# this the overall list where we save all the h values 
-												pop1_h = np.append(pop1_h, pop1_h_value)
-												pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
-												
-												pop2_h = np.append(pop2_h, pop2_h_value)
-												pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
+												if h == 9: #h is random
+													# generate new h values
+													pop1_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop1_newmuts + 1)).reshape(len(pop1_newmuts), 1), 2)
+													pop2_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop2_newmuts + 1)).reshape(len(pop2_newmuts), 1), 2)
 
-											elif h == 'options': 
-												# generate new h values
-												pop1_h_value = np.round(np.random.choice(options, len(pop1_newmuts)).reshape(len(pop1_newmuts), 1), 2)
-												pop2_h_value = np.round(np.random.choice(options, len(pop2_newmuts)).reshape(len(pop2_newmuts), 1), 2)
+													# this the overall list where we save all the h values 
+													pop1_h = np.append(pop1_h, pop1_h_value)
+													pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
+													
+													pop2_h = np.append(pop2_h, pop2_h_value)
+													pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
 
-												# this the overall list where we save all the h values 
-												pop1_h = np.append(pop1_h, pop1_h_value)
-												pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
-												
-												pop2_h = np.append(pop2_h, pop2_h_value)
-												pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
+												elif h == 'options': #h is 0, 1 or 0.5
+													# generate new h values
+													pop1_h_value = np.round(np.random.choice(options, len(pop1_newmuts)).reshape(len(pop1_newmuts), 1), 2)
+													pop2_h_value = np.round(np.random.choice(options, len(pop2_newmuts)).reshape(len(pop2_newmuts), 1), 2)
 
+													# this the overall list where we save all the h values 
+													pop1_h = np.append(pop1_h, pop1_h_value)
+													pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column 
+													
+													pop2_h = np.append(pop2_h, pop2_h_value)
+													pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column 
 
-											else:
-												pop1_h = np.append(pop1_h, np.repeat(h, len(pop1_newmuts))) 
-												pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column
+												else: #h is 0.5 
+													pop1_h = np.append(pop1_h, np.repeat(h, len(pop1_newmuts))) 
+													pop1_h = np.reshape(pop1_h, (np.shape(pop1_h)[0], 1)) #reshape into one column
 
-												pop2_h = np.append(pop2_h, np.repeat(h, len(pop2_newmuts)))
-												pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column
+													pop2_h = np.append(pop2_h, np.repeat(h, len(pop2_newmuts)))
+													pop2_h = np.reshape(pop2_h, (np.shape(pop2_h)[0], 1)) #reshape into one column
+
+											# else: #if there is PE
+
+											# 	if h == 9: #h is random
+											# 		if snp.sum(pop1nmuts) == 0: # if this is the first mutation we generate 
+											# 		pop1_new_h = hlist[0: pop1nmuts]
+											# 		pop2_new_h = hlist[0: pop2nmuts]
+
+											# 		#append these to the collection matrices for each pop
+											# 		pevo_pop1_hlist = np.append(pevo_pop1_hlist, pop1_new_h)
+											# 		pevo_pop2_hlist = np.append(pevo_pop2_hlist, pop2_new_h)
+
 											
 											# remove lost mutations (all zero columns in pop)
 											[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
 											[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2, remove2] = remove_muts(pop2_genotype, mut2)
 											
-											[pop1_overall_summed] = add_h(pop1_overall, pop1_h, h)
-											[pop2_overall_summed] = add_h(pop2_overall, pop2_h, h)
+											if pevo_adapt == 'on':
 
-											pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix 
-											pop2_h = np.delete(pop2_h, remove2, 0)
+												print('pop1_overall')
+												print(pop1_overall)
+												print('pevo_pop1_hlist')
+												print(pevo_pop1_hlist)
+												print('pop1_overall_summed')
+												print(pop1_overall_summed)
+
+												# pick the h values from the matrix 
+												pevo_pop1_hlist = pick_h(pop1nmuts, pop1_newmuts, pevo_pop1_hlist, hlist)
+												pevo_pop2_hlist = pick_h(pop2nmuts, pop2_newmuts, pevo_pop2_hlist, hlist)
+
+												# add the h values normally, just this time use the pregenerated h values matrix 
+												[pop1_overall_summed] = add_h(pop1_overall, pevo_pop1_hlist, h)
+												[pop2_overall_summed] = add_h(pop2_overall, pevo_pop2_hlist, h)
+
+											else:
+
+												[pop1_overall_summed] = add_h(pop1_overall, pop1_h, h)
+												[pop2_overall_summed] = add_h(pop2_overall, pop2_h, h) 
+
 
 											# go to next generation
 											gen += 1
@@ -603,6 +656,8 @@ def main():
 
 										else: #if pevo is on (there is parallel evolution), then do something different: 
 											
+											#=====================================================
+											#STUFF SPECIAL TO PE
 											#sum the mut matrices across columns 
 											mut1sum = np.sum(mut1, axis = 1)
 											mut2sum = np.sum(mut2, axis = 1)
@@ -623,12 +678,15 @@ def main():
 											pop2_pe_loci = pop2_genotype_pe[:, pop2_pe_idx]
 
 											#delete those rows from the genotype matrix, update the pop_genotype_pe matrix 
-											pop1_genotype_pe = np.delete(pop1_genotype_pe, pop1_pe_loci, axis = 1)
-											pop2_genotype_pe = np.delete(pop2_genotype_pe, pop2_pe_loci, axis = 1)
+											pop1_genotype_pe = np.delete(pop1_genotype_pe, pop1_pe_idx, axis = 1)
+											pop2_genotype_pe = np.delete(pop2_genotype_pe, pop2_pe_idx, axis = 1)
 
 											#stick the deleted rows at the beginning of each genotype matrix 
 											pop1_genotype_pe = np.hstack((pop1_pe_loci, pop1_genotype_pe))
 											pop2_genotype_pe = np.hstack((pop2_pe_loci, pop2_genotype_pe))
+											#=======================================================
+
+
 
 											#this is initially the end. do the same steps above for this set of chromosomes. 
 											pop1_chrom1 = np.split(pop1_genotype_pe, 2, axis = 1)[0]
