@@ -298,8 +298,7 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx):
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-
-nreps = 1 #number of replicates for each set of parameters
+nreps = 2 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 data_dir = 'data'
 
@@ -308,29 +307,24 @@ N_adapts = [1000] #number of diploid individuals (positive integer)
 alpha_adapts = [0.1] #mutational sd (positive real number)
 # u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
 
-u_adapt = (0.0001/alpha_adapt)
+# u_adapt = (0.0001/alpha_adapt)
 
 sigma_adapts = [1] #selection strengths
 
 opt_dists = [1] #distance to optima
 
-n_angles = 10 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 2000 #total number of generations populations adapt for
+maxgen = 3000 #total number of generations populations adapt for
 
-howmany_mutlist = 
+# howmany_mutlist = (u_adapt * N_adapts[0] * maxgen * 2) * 4 #number of rows in the mutlist matrix that we need for pevo
 
+dom = [9]
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
-dom = [9]
 
-pevo = ['on'] #this is parallel evolution. either on or off. 
+pevo = ['off', 'on'] #this is parallel evolution. either on or off. 
 
-######################################################################
-##PARAMETERS FOR HYBRIDS##
-######################################################################
-
-nHybrids = 200 #number of hybrids to make at end of each replicate
 
 ######################################################################
 ##FUNCTION FOR POPULATIONS TO ADAPT##
