@@ -156,7 +156,7 @@ def mutate(off, u_adapt, alpha, n, mut, popnmuts, mutlist, pevo):
 		newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd (how far you from the mean) rows:nmuts coloumns=n. each pair is x and y coordinates. they tell you how far and which direction you go away from the origin 
 
 	else: #if PE is off
-		if len(popnmuts) == 0 or sum(popnmuts) == 0: #if we haven't generated any mutations yet (if this is the 1st time we are calling the mut function) just pick the first n rows from the mut matrix 
+		if sum(popnmuts) == 0: #if we haven't generated any mutations yet (if this is the 1st time we are calling the mut function) just pick the first n rows from the mut matrix 
 			newmuts = mutlist[0: nmuts] #mutlist is the main mutation array we generate in the beginning and pick from later on. for the 1st generation, pick the first nmuts rows. 
 
 		else: #if we already generated mutations before, meaning if this isnt the 1st generation
@@ -281,6 +281,18 @@ def remove_muts(pop_genotype, mut): #here pop is the same thing as off
 	
 	return[pop_chrom1, pop_chrom2, pop_genotype, pop_overall, mut, remove]
 
+def calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx):
+	
+	pop1_shared = len(pop1_pe_idx)
+	pop1_total = np.shape(pop1_genotype_pe)[1]
+
+	pop2_shared = len(pop2_pe_idx)
+	pop2_total = np.shape(pop2_genotype_pe)[1]
+
+	kenmet = 0.5 * (pop1_shared / pop1_total + pop2_shared / pop2_total)
+
+	return kenmet
+
 
 ######################################################################
 ##UNIVERSAL PARAMETERS##
@@ -294,16 +306,19 @@ data_dir = 'data'
 N_adapts = [1000] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
-# u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate 
-#defined in the script
+# u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
+
+u_adapt = (0.0001/alpha_adapt)
 
 sigma_adapts = [1] #selection strengths
 
 opt_dists = [1] #distance to optima
 
-n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 10 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
 maxgen = 2000 #total number of generations populations adapt for
+
+howmany_mutlist = 
 
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
@@ -443,8 +458,8 @@ def main():
 												pop2_h = h 
 
 										else:
-											pop1_h = np.array([])
-											pop2_h = np.array([])
+											pop1_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+											pop2_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
 
 										'''	
 										Initialize the nmuts arrays for both populations. they will be empty in the beginning since they havent started mutating yet. we need these nmuts arrays for PE. 
@@ -454,9 +469,13 @@ def main():
 										pop2nmutslist = np.array([])
 
 										# generate the mut array 
-										mutlist = np.random.normal(1, 1, 6000).reshape(3000, n) #create the list of mutations to pick from later on in PE 
+										mutlist = np.random.normal(0, alpha_adapt, size = (3000, n)) #create the list of mutations to pick from later on in PE 
 										# generate the h values array
-										hlist = np.round(np.random.uniform(0, 1, 3000).reshape(3000, 1), 2)
+										
+										if h == 9:
+											hlist = np.random.uniform(0, alpha_adapt, size = (3000, 1))
+										elif h == 0.5:
+											hlist = np.repeat(0.5, 3000)
 
 										# intitialize generation counter
 										gen = 0
@@ -525,6 +544,9 @@ def main():
 
 													pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
 													pop2_h = np.delete(pop2_h, remove2, 0)
+
+													[pop1_overall_summed] = add_h(pop1_overall, pop1_h, h)
+													[pop2_overall_summed] = add_h(pop2_overall, pop2_h, h)
 											
 											# go to next generation
 											gen += 1
@@ -667,7 +689,11 @@ def main():
 											pop2_genotype_pe = np.hstack((pop2_pe_loci, pop2_genotype_pe))
 											#=======================================================
 
-
+											#CALCULATE KENMET - indicator of parallel evolution
+											if pevo_adapt == 'off': #if pevo is off, this is just zero. zero will saved on the output files
+												kenmet == 0 
+											else:  
+												kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx)
 
 											#this is initially the end. do the same steps above for this set of chromosomes. 
 											pop1_chrom1 = np.split(pop1_genotype_pe, 2, axis = 1)[0]
@@ -964,7 +990,7 @@ def main():
 										np.savetxt(fileHandle_B, pheno_data, fmt = '%.3f', delimiter = ',')
 										
 										# SAVE THE H VALUES / SUMMARY 
-										sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, np.round(opt_dist * (2*(1-math.cos(angles[j])))**(0.5), 3), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, F2_phenos_1, F2_phenos_2, np.round(h_averaged, 3), h_fixed_mean, u_adapt, sigma_adapt, alpha_adapt, opt_dist])))
+										sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, np.round(opt_dist * (2*(1-math.cos(angles[j])))**(0.5), 3), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, F2_phenos_1, F2_phenos_2, np.round(h_averaged, 3), h_fixed_mean, u_adapt, sigma_adapt, alpha_adapt, opt_dist, kenmet])))
 										np.savetxt(fileHandle_A, sum_data, fmt = '%.3f', delimiter = ',') 
 										
 										# SAVE THE MUT SUMMARY / ADAPTATION
@@ -997,9 +1023,9 @@ def main():
 
 										# print an update
 										if h == 9:
-											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h= %d' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h)) 
+											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%d, pevo=%s' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 										else:
-											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h= %s' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h)) 
+											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%s, pevo=%s' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 
 										# go to next rep
 										rep += 1
@@ -1045,7 +1071,7 @@ def main():
 
 	sim_id = '_n%s_N%s_alpha%s_sigma%s_opt_dist%s_dom%s' %(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom)
 	df_summary = pd.read_csv("mutsummary%s.csv" %(sim_id), header = None)
-	df_summary.columns = ['angle', 'reps', 'opt_dist', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_phenos1', 'F1_phenos2', 'F2_phenos1', 'F2_phenos2', 'h_mean', 'h_fixed_mean', 'u', 'sigma', 'alpha', 'opt_dist'] 
+	df_summary.columns = ['angle', 'reps', 'opt_dist', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_phenos1', 'F1_phenos2', 'F2_phenos1', 'F2_phenos2', 'h_mean', 'h_fixed_mean', 'u', 'sigma', 'alpha', 'opt_dist', 'kenmet'] 
 	df_summary.to_csv("mutsummary%s.csv" %(sim_id))
 
 	#adaptation
