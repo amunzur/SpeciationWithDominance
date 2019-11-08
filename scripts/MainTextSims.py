@@ -302,7 +302,7 @@ nreps = 2 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 data_dir = 'data'
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [100] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 # u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
@@ -315,7 +315,7 @@ opt_dists = [1] #distance to optima
 
 n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 3000 #total number of generations populations adapt for
+maxgen = 100 #total number of generations populations adapt for
 
 # howmany_mutlist = (u_adapt * N_adapts[0] * maxgen * 2) * 4 #number of rows in the mutlist matrix that we need for pevo
 
@@ -683,12 +683,6 @@ def main():
 											pop2_genotype_pe = np.hstack((pop2_pe_loci, pop2_genotype_pe))
 											#=======================================================
 
-											#CALCULATE KENMET - indicator of parallel evolution
-											if pevo_adapt == 'off': #if pevo is off, this is just zero. zero will saved on the output files
-												kenmet == 0 
-											else:  
-												kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx)
-
 											#this is initially the end. do the same steps above for this set of chromosomes. 
 											pop1_chrom1 = np.split(pop1_genotype_pe, 2, axis = 1)[0]
 											pop1_chrom2 = np.split(pop1_genotype_pe, 2, axis = 1)[1]
@@ -748,6 +742,12 @@ def main():
 												F1_after_recomb2 = crossover(F1_before_recomb2)
 												F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
 												F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
+
+										#CALCULATE KENMET - indicator of parallel evolution
+										if pevo_adapt == 'off': #if pevo is off, this is just zero. zero will saved on the output files
+											kenmet = 0 
+										else:  
+											kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx)
 
 										#save the hybrid genotypes:
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
@@ -984,8 +984,8 @@ def main():
 										np.savetxt(fileHandle_B, pheno_data, fmt = '%.3f', delimiter = ',')
 										
 										# SAVE THE H VALUES / SUMMARY 
-										sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, np.round(opt_dist * (2*(1-math.cos(angles[j])))**(0.5), 3), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, F2_phenos_1, F2_phenos_2, np.round(h_averaged, 3), h_fixed_mean, u_adapt, sigma_adapt, alpha_adapt, opt_dist, kenmet])))
-										np.savetxt(fileHandle_A, sum_data, fmt = '%.3f', delimiter = ',') 
+										sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, np.round(opt_dist * (2*(1-math.cos(angles[j])))**(0.5), 3), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, F2_phenos_1, F2_phenos_2, np.round(h_averaged, 3), h_fixed_mean, u_adapt, sigma_adapt, alpha_adapt, opt_dist, kenmet, pevo_adapt])))
+										np.savetxt(fileHandle_A, sum_data, fmt = '%.3s', delimiter = ',') 
 										
 										# SAVE THE MUT SUMMARY / ADAPTATION
 										adapt_summary = np.vstack((adapt_summary_variable))
@@ -1053,7 +1053,7 @@ def main():
 
 	#clean up
 	close_output_files(fileHandle_A)
-	close_output_files(fileHandle_B) 
+	close_output_files(fileHandle_B)
 	close_output_files(fileHandle_C)
 	close_output_files(fileHandle_D)
 	close_output_files(fileHandle_E)
@@ -1062,10 +1062,10 @@ def main():
 	os.chdir('/Users/student/Desktop/asli/summer-2019/data_done')
 
 	#summary
-
 	sim_id = '_n%s_N%s_alpha%s_sigma%s_opt_dist%s_dom%s' %(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom)
+
 	df_summary = pd.read_csv("mutsummary%s.csv" %(sim_id), header = None)
-	df_summary.columns = ['angle', 'reps', 'opt_dist', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_phenos1', 'F1_phenos2', 'F2_phenos1', 'F2_phenos2', 'h_mean', 'h_fixed_mean', 'u', 'sigma', 'alpha', 'opt_dist', 'kenmet'] 
+	df_summary.columns = ['angle', 'reps', 'opt_dist', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_phenos1', 'F1_phenos2', 'F2_phenos1', 'F2_phenos2', 'h_mean', 'h_fixed_mean', 'u', 'sigma', 'alpha', 'opt_dist', 'kenmet', 'pevo'] 
 	df_summary.to_csv("mutsummary%s.csv" %(sim_id))
 
 	#adaptation
