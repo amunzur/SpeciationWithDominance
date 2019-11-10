@@ -12,7 +12,7 @@ import os
 ######################################################################
 
 
-def open_output_files(n, N, alpha, sigma, opt_dist, dom):
+def open_output_files(n, N, alpha, sigma, opt_dist, dom, pevo):
 	"""
 	This function opens the output files and returns file
 	handles to each.
@@ -21,12 +21,11 @@ def open_output_files(n, N, alpha, sigma, opt_dist, dom):
 	data_dir = '/Users/student/Desktop/asli/summer-2019/data_done'
 
 
-	sim_id = '_n%s_N%s_alpha%s_sigma%s_opt_dist%s_dom%s' %(n, N, alpha, sigma, opt_dist, dom)
+	sim_id = '_n%s_N%s_alpha%s_sigma%s_opt_dist%s_dom%s_pevo%s' %(n, N, alpha, sigma, opt_dist, dom, pevo)
 	outfile_A = open(os.path.join(data_dir, "mutsummary%s.csv" %(sim_id)), "w") #summary data
 	outfile_B = open(os.path.join(data_dir, "phenotypes%s.csv" %(sim_id)), "w") #hybrid phenotypes at the end 
 	outfile_C = open(os.path.join(data_dir, "adaptation%s.csv" %(sim_id)), "w")
 	outfile_D = open(os.path.join(data_dir, "fitness%s.csv" %(sim_id)), "w")#save the fitness of the parents and the F1 hybrids in the same file 
-
 	outfile_E = open(os.path.join(data_dir, "fitMean%s.csv" %(sim_id)), "w")
 
 	return [outfile_A, outfile_B, outfile_C, outfile_D, outfile_E]
@@ -298,32 +297,30 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx):
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 2 #number of replicates for each set of parameters
+nreps = 1 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 data_dir = 'data'
 
-N_adapts = [100] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 # u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
 
 # u_adapt = (0.0001/alpha_adapt)
 
-sigma_adapts = [1] #selection strengths
+sigma_adapts = [5] #selection strengths
 
 opt_dists = [1] #distance to optima
 
-n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 100 #total number of generations populations adapt for
-
-# howmany_mutlist = (u_adapt * N_adapts[0] * maxgen * 2) * 4 #number of rows in the mutlist matrix that we need for pevo
+maxgen = 3000 #total number of generations populations adapt for
 
 dom = [9]
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
 
-pevo = ['off', 'on'] #this is parallel evolution. either on or off. 
+pevo = ['on'] #this is parallel evolution. either on or off. 
 
 
 ######################################################################
@@ -334,7 +331,7 @@ def main():
 
 	#open the files, return file handles to each 
 
-	[fileHandle_A, fileHandle_B, fileHandle_C, fileHandle_D, fileHandle_E] = open_output_files(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom)
+	[fileHandle_A, fileHandle_B, fileHandle_C, fileHandle_D, fileHandle_E] = open_output_files(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom, pevo)
 
 
 	#loop over parallel evolution - on or off
@@ -363,7 +360,7 @@ def main():
 						alpha_adapt = alpha_adapts[i_alpha]
 
 						#find over mutation rate 
-						u_adapt = (0.0001/alpha_adapt)
+						u_adapt = (0.00001/alpha_adapt)
 						#can uncomment this part later and add a u+=1 at the end to loop over u values 
 						# i_u = 0 
 						# while i_u < len(u_adapts):
@@ -462,10 +459,14 @@ def main():
 										pop1nmutslist = np.array([])
 										pop2nmutslist = np.array([])
 
-										# generate the mut array 
-										mutlist = np.random.normal(0, alpha_adapt, size = (3000, n)) #create the list of mutations to pick from later on in PE 
+										# generate the mut values array 
+										mutsize = int((u_adapt * N_adapt * maxgen * 2) * 4) #number of rows in the mutlist matrix that we need for pevo, convert it to an integer
+										mutlist = np.random.normal(0, alpha_adapt, size = (3000, n)) #create the list of mutations to pick from later on in PE, generate the mut array 
+										mutlistsum = np.sum(mutlist, axis = 1)# add across the rows
+										mutidx = np.unique(mutlistsum, return_index = True)[1]#find the indices unique elements 
+										mutlist = mutlist[mutidx]# apply the indices to the mutlist array and update it 
+
 										# generate the h values array
-										
 										if h == 9:
 											hlist = np.random.uniform(0, alpha_adapt, size = (3000, 1))
 										elif h == 0.5:
@@ -659,16 +660,34 @@ def main():
 											mut1sum = np.sum(mut1, axis = 1)
 											mut2sum = np.sum(mut2, axis = 1)
 
+											print('mut1sum')
+											print(mut1sum)
+											print('mut2sum')
+											print(mut2sum)
+
 											#find their intersection. this doesnt return indices, just returns the value(s) that is the same between the matrix and the intersection 
 											intersect = np.intersect1d(mut1sum, mut2sum)
+											print(intersect)
 											
 											#find indices in both mutsum arrays where mutsum has the same values as the intersect. columns that have those indices in the genotype matrices has the same mutations 
 											pop1_pe_idx = np.flatnonzero(np.in1d(mut1sum, intersect))
 											pop2_pe_idx = np.flatnonzero(np.in1d(mut2sum, intersect))
 
+											print('pop1_pe_idx')
+											print(pop1_pe_idx)
+											print('pop2_pe_idx')
+											print(pop2_pe_idx)
+
 											#before doing the step below, put the genotype matrix in the correct format. horizontally stack it so that ch1 and ch2 are aligned. both ch of individuals are in the same row 
 											pop1_genotype_pe = np.hstack((pop1_chrom1, pop1_chrom2))
 											pop2_genotype_pe = np.hstack((pop2_chrom1, pop2_chrom2))
+
+
+											print('pop1_genotype_pe')
+											print(pop1_genotype_pe)
+											print('pop2_genotype_pe')
+											print(pop2_genotype_pe)
+
 
 											#apply the indices to the genotype matrices to find the loci that have those mut values. basically find the loci that is undergoing PE. 
 											pop1_pe_loci = pop1_genotype_pe[:, pop1_pe_idx]
@@ -1062,7 +1081,7 @@ def main():
 	os.chdir('/Users/student/Desktop/asli/summer-2019/data_done')
 
 	#summary
-	sim_id = '_n%s_N%s_alpha%s_sigma%s_opt_dist%s_dom%s' %(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom)
+	sim_id = '_n%s_N%s_alpha%s_sigma%s_opt_dist%s_dom%s_pevo%s' %(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom, pevo)
 
 	df_summary = pd.read_csv("mutsummary%s.csv" %(sim_id), header = None)
 	df_summary.columns = ['angle', 'reps', 'opt_dist', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_phenos1', 'F1_phenos2', 'F2_phenos1', 'F2_phenos2', 'h_mean', 'h_fixed_mean', 'u', 'sigma', 'alpha', 'opt_dist', 'kenmet', 'pevo'] 
