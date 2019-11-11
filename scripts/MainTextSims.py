@@ -180,7 +180,7 @@ def recomb(surv):
 	
 # 	return [newmuts, pop_genotype, pop_overall, mut, nmuts]
 
-def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seedlist):
+def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seedlist, rep):
 	"""
 	This function creates mutations and updates population
 	"""
@@ -196,32 +196,32 @@ def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seed
 
 	else:	
 
-		seed_idx = seedlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
+		seed_idx = [int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
 
 		newmuts_collected = np.array([])
-		i = 0 
-		while i < nmuts:
-			idx_used = seed_idx[i]
-			mut_seed = seedlist[idx_used]
+		w = 0 
+		while w < nmuts:
+			# idx_used = seed_idx[w]
+			mut_seed = seedlist[seed_idx[w]]
 			mutstate = RandomState(mut_seed)
 			newmuts = mutstate.normal(0, alpha, size = (1, n))
 			newmuts_collected = np.append(newmuts_collected, newmuts)			
-			i += 1 
+			w += 1 
 
 		a = int(len(newmuts_collected)/2)
 		newmuts_collected = np.reshape(newmuts_collected, (a, n))
 
 
 		pop_new_h = np.array([])	
-		i = 0 
-		while i < nmuts: 
-			idx_used = seed_idx[i]
-			h_seed = seedlist[idx_used]
+		w = 0 
+		while w < nmuts: 
+			idx_used = seed_idx[w]
+			h_seed = seedlist[int(idx_used/1000)]
 			hstate = RandomState(h_seed)
 			newh = hstate.uniform(0, 1, size = 1)
 			pop_new_h = np.append(pop_new_h, newh)
 
-			i += 1 
+			w += 1 
 		pop_h = np.append(pop_h, pop_new_h)
 		pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1))
 
@@ -332,15 +332,15 @@ def remove_muts(pop_genotype, mut): #here pop is the same thing as off
 	
 	return[pop_chrom1, pop_chrom2, pop_genotype, pop_overall, mut, remove]
 
-def calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx):
+def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe_idx_checked):
 	
-	pop1_shared = len(pop1_pe_idx)
-	pop1_total = np.shape(pop1_genotype_pe)[1]
+	# pop1_shared = len(pop1_pe_idx) - 1
+	pop1_total = np.shape(pop1_genotype_pe)[1] - 1
 
-	pop2_shared = len(pop2_pe_idx)
-	pop2_total = np.shape(pop2_genotype_pe)[1]
+	# pop2_shared = len(pop2_pe_idx) - 1
+	pop2_total = np.shape(pop2_genotype_pe)[1] - 1
 
-	kenmet = 0.5 * (pop1_shared / pop1_total + pop2_shared / pop2_total)
+	kenmet = 0.5 * ((pop1_pe_idx_checked - 1) / pop1_total + (pop2_pe_idx_checked - 1) / pop2_total)
 
 	return kenmet
 
@@ -349,17 +349,17 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx):
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 1 #number of replicates for each set of parameters
+nreps = 10 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [10] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 # u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
 
 # u_adapt = (0.0001/alpha_adapt)
 
-sigma_adapts = [0.5] #selection strengths
+sigma_adapts = [10] #selection strengths
 
 opt_dists = [1] #distance to optima
 
@@ -371,7 +371,7 @@ dom = [9]
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
 
-pevo = ['on'] #this is parallel evolution. either on or off. 
+pevo = [1, 0] #this is parallel evolution. either on or off. 
 
 
 ######################################################################
@@ -384,234 +384,256 @@ def main():
 
 	[fileHandle_A, fileHandle_B, fileHandle_C, fileHandle_D, fileHandle_E] = open_output_files(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom, pevo)
 
+	#loop over population size
+	i_N = 0
+	while i_N < len(N_adapts):
+		N_adapt = N_adapts[i_N]
 
-	#loop over parallel evolution - on or off
-	i_pevo = 0 
-	while i_pevo < len(pevo):
-		pevo_adapt = pevo[i_pevo]
+		#loop over h values
+		i_dom = 0 
+		while i_dom < len(dom):
+			h = dom[i_dom]
 
-		#loop over population size
-		i_N = 0
-		while i_N < len(N_adapts):
-			N_adapt = N_adapts[i_N]
+			#loop over selection strength
+			i_sigma = 0
+			while i_sigma < len(sigma_adapts):
+				sigma_adapt = sigma_adapts[i_sigma]
 
-			#loop over h values
-			i_dom = 0 
-			while i_dom < len(dom):
-				h = dom[i_dom]
+				#loop over mutational sd
+				i_alpha = 0 
+				while i_alpha < len(alpha_adapts):
+					alpha_adapt = alpha_adapts[i_alpha]
 
-				#loop over selection strength
-				i_sigma = 0
-				while i_sigma < len(sigma_adapts):
-					sigma_adapt = sigma_adapts[i_sigma]
+					#find over mutation rate 
+					u_adapt = (0.00001/alpha_adapt)
+					#can uncomment this part later and add a u+=1 at the end to loop over u values 
+					# i_u = 0 
+					# while i_u < len(u_adapts):
+					# 	u_adapt = u_adapts[i_u]
 
-					#loop over mutational sd
-					i_alpha = 0 
-					while i_alpha < len(alpha_adapts):
-						alpha_adapt = alpha_adapts[i_alpha]
+					#loop over opt_dist
+					i_opt_dist = 0 
+					while i_opt_dist < len(opt_dists):
+						opt_dist = opt_dists[i_opt_dist]
 
-						#find over mutation rate 
-						u_adapt = (0.0001/alpha_adapt)
-						#can uncomment this part later and add a u+=1 at the end to loop over u values 
-						# i_u = 0 
-						# while i_u < len(u_adapts):
-						# 	u_adapt = u_adapts[i_u]
+						#loop over dimensions
+						l = 0
+						while l < len(ns):
+							n = ns[l]
 
-						#loop over opt_dist
-						i_opt_dist = 0 
-						while i_opt_dist < len(opt_dists):
-							opt_dist = opt_dists[i_opt_dist]
+							#set n-dependent parameters
 
-							#loop over dimensions
-							l = 0
-							while l < len(ns):
-								n = ns[l]
+							theta1 = np.append(opt_dist,[0]*(n-1)) #set one optima to be fixed
+							angles = [math.pi*x/(n_angles-1) for x in range(n_angles)] #angles to use (in radians)
+							if n == 2:
+								theta2_list = np.array([[opt_dist*math.cos(x), opt_dist*math.sin(x)] for x in angles]) #optima to use
+							elif n > 2:
+								theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
 
-								#set n-dependent parameters
-
-								theta1 = np.append(opt_dist,[0]*(n-1)) #set one optima to be fixed
-								angles = [math.pi*x/(n_angles-1) for x in range(n_angles)] #angles to use (in radians)
-								if n == 2:
-									theta2_list = np.array([[opt_dist*math.cos(x), opt_dist*math.sin(x)] for x in angles]) #optima to use
-								elif n > 2:
-									theta2_list = np.array([np.append([opt_dist*math.cos(x), opt_dist*math.sin(x)], [0]*(n-2)) for x in angles]) #optima to use
-
-								#loop over optima
-								j = 0
-								while j < len(theta2_list):
-									
-									#set optima
-									theta2 = theta2_list[j]
-
-									# #set up plot of hybrid load versus number of ancestral mutations (n_muts)
-									# plt.axis([0, max(n_mut_list)+1, 0, 0.1])
-									# plt.ylabel('hybrid load at generation %d (mean $\pm$ SD of %d replicates)' %(maxgen,nreps))
-									# plt.xlabel('number of ancestral mutations')
-									# plt.ion()
-
-									#loop over all replicates
-									rep = 0
+							#loop over optima
+							j = 0
+							while j < len(theta2_list):
 								
-									while rep < nreps:
+								#set optima
+								theta2 = theta2_list[j]
 
-										#found identical populations
-										popfound1 = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
-										popfound2 = np.array([[1]] * N_adapt) 
-										popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
+								# #set up plot of hybrid load versus number of ancestral mutations (n_muts)
+								# plt.axis([0, max(n_mut_list)+1, 0, 0.1])
+								# plt.ylabel('hybrid load at generation %d (mean $\pm$ SD of %d replicates)' %(maxgen,nreps))
+								# plt.xlabel('number of ancestral mutations')
+								# plt.ion()
 
-										mut = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
+								#loop over all replicates
+								rep = 0
+								trial1 = np.array([0, 0])
+								trial2 = np.array([0, 0])
+							
+								
 
-										[pop1, mut1] = [popfound, mut] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
-										[pop2, mut2] = [popfound, mut] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-										pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
-										pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
+								while rep < nreps:
 
-										pop2_chrom1 = popfound2 # 1st chromosome of pop2
-										pop2_chrom2 = popfound2 # 2nd chromosome of pop2
+									#found identical populations
+									popfound1 = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
+									popfound2 = np.array([[1]] * N_adapt) 
+									popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-										pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
-										pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
+									mut = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
 
-										pop1_overall_summed = np.copy(pop1_overall)
-										pop2_overall_summed = np.copy(pop2_overall)
+									[pop1, mut1] = [popfound, mut] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
+									[pop2, mut2] = [popfound, mut] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-										pop1_h = np.random.uniform(low = 0, high = 1, size = 1)
-										pop2_h = np.random.uniform(low = 0, high = 1, size = 1)
+									pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
+									pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
 
-										pop1nmutslist = np.array([])
-										pop2nmutslist = np.array([])
+									pop2_chrom1 = popfound2 # 1st chromosome of pop2
+									pop2_chrom2 = popfound2 # 2nd chromosome of pop2
 
-										# generate the mut values array 
-										mutsize = int((u_adapt * N_adapt * maxgen * 2) * 4) #number of rows in the mutlist matrix that we need for pevo, convert it to an integer
-										mutlist = np.random.normal(0, alpha_adapt, size = (3000, n)) #create the list of mutations to pick from later on in PE, generate the mut array 
-										mutlistsum = np.sum(mutlist, axis = 1)# add across the rows
-										mutidx = np.unique(mutlistsum, return_index = True)[1]#find the indices unique elements 
-										mutlist = mutlist[mutidx]# apply the indices to the mutlist array and update it
+									pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
+									pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 
-										# generate the h values array
-										if h == 9:
-											hlist = np.random.uniform(0, alpha_adapt, size = (3000, 1))
+									pop1_overall_summed = np.copy(pop1_overall)
+									pop2_overall_summed = np.copy(pop2_overall)
+
+									pop1_h = np.random.uniform(low = 0, high = 1, size = 1)
+									pop2_h = np.random.uniform(low = 0, high = 1, size = 1)
+
+									pop1nmutslist = np.array([])
+									pop2nmutslist = np.array([])
+
+									# generate the mut values array 
+									mutsize = int((u_adapt * N_adapt * maxgen * 2) * 4) #number of rows in the mutlist matrix that we need for pevo, convert it to an integer
+									mutlist = np.random.normal(0, alpha_adapt, size = (3000, n)) #create the list of mutations to pick from later on in PE, generate the mut array 
+									mutlistsum = np.sum(mutlist, axis = 1)# add across the rows
+									mutidx = np.unique(mutlistsum, return_index = True)[1]#find the indices unique elements 
+									mutlist = mutlist[mutidx]# apply the indices to the mutlist array and update it
+
+									# generate the h values array
+									if h == 9:
+										hlist = np.random.uniform(0, alpha_adapt, size = (3000, 1))
+									
+									elif h == 0.5:
+										hlist = np.repeat(0.5, 3000)
+
+									# intitialize generation counter
+									gen = 0
+
+									# run until maxgen
+									while gen < maxgen + 1:
+
+										# # genotype to phenotype (diploid):
+										phenos1 = np.dot(pop1_overall_summed, mut1) #sum mutations held by each individual
+										phenos2 = np.dot(pop2_overall_summed, mut2) #sum mutations held by each individual
+
+										# # # phenotype to fitness
+										w1 = fitness(phenos1, theta1, sigma_adapt)
+										w2 = fitness(phenos2, theta2, sigma_adapt)
+
+										# # wright-fisher (multinomial) sampling, number of times each parent chosen, drawing samples from a multinomial ditribution
+										# # N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen. if you are more fit, you are chosen more often. 
+										parents1 = np.random.multinomial(N_adapt, w1/sum(w1))
+										off1_chrom1 = np.repeat(pop1_chrom1, parents1, axis = 0) 
+										off1_chrom2 = np.repeat(pop1_chrom2, parents1, axis = 0)
+										off1 = [off1_chrom1, off1_chrom2]
 										
+										parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
+										off2_chrom1 = np.repeat(pop2_chrom1, parents2, axis = 0) # offspring genotypes of pop2
+										off2_chrom2 = np.repeat(pop2_chrom2, parents2, axis = 0)
+										off2 = [off2_chrom1, off2_chrom2]
+
+										# # mating and recombination
+										off1 = recomb(off1)
+										off2 = recomb(off2)
+
+										# mutation and population update
+										if rep == 0: 
+											lowerboundary = 0
+											upperboundary = 10000
+
+										else:
+											lowerboundary = (rep - 1) * 10000
+											upperboundary = rep * 10000
+
+										seedlist = np.arange(lowerboundary, upperboundary) #determine the seed for this run of the function
+										# hseedlist = np.arange(10000, 20000)
+
+										[pop1_genotype, pop1_overall, mut1, pop1nmuts, pop1_h, pop1newmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, hlist, pop1_h, seedlist, rep)
+										pop1newmuts = np.reshape(pop1newmuts, (len(pop1newmuts), 2))
+										trial1 = np.vstack((trial1, pop1newmuts))
+
+
+										
+										[pop2_genotype, pop2_overall, mut2, pop2nmuts, pop2_h, pop2newmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, hlist, pop2_h, seedlist, rep)
+										pop2newmuts = np.reshape(pop2newmuts, (len(pop2newmuts), 2))
+										trial2 = np.vstack((trial2, pop2newmuts))
+
+
+
+										# print('mut2')
+										# print(mut2)
+
+										pop1nmutslist = np.append(pop1nmutslist, pop1nmuts)
+										pop2nmutslist = np.append(pop2nmutslist, pop2nmuts)
+
+										# # # remove lost mutations (all zero columns in pop)
+										[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
+										[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2, remove2] = remove_muts(pop2_genotype, mut2)
+
+										[pop1_h, pop1_overall_summed] = dealwithh(pop1_overall, pop1_h)
+										[pop2_h, pop2_overall_summed] = dealwithh(pop2_overall, pop2_h)
+
+										pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
+										pop2_h = np.delete(pop2_h, remove2, 0)
+										# print('remove1')
+										# print(remove1)
+
+										# go to next generation
+										gen += 1
+
+
+
+										#############################################
+										# CREATE THE ADAPTATION SUMMARY (of parents)
+										#############################################
+										
+										one = np.ones(len(mut1)).reshape(len(mut1), 1)
+										two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
+										pop1_or_pop2 = np.vstack((one, two))
+
+										pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
+										pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
+										freq_overall = np.round(np.vstack((pop1_freq, pop2_freq)), 4)
+										
+										pop1_mut_n1 = mut1[:, 0].reshape(np.shape(mut1)[0], 1)
+										pop2_mut_n1 = mut2[:, 0].reshape(np.shape(mut2)[0], 1)
+										mut_n1_overall = np.round(np.vstack((pop1_mut_n1, pop2_mut_n1)), 3)
+										
+										pop1_mut_n2 = mut1[:, 1].reshape(np.shape(mut1)[0], 1)
+										pop2_mut_n2 = mut2[:, 1].reshape(np.shape(mut2)[0], 1)
+										mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3)
+
+										h_overall = np.vstack((pop1_h, pop2_h))
+
+										# print('pop1_h')
+										# print(np.shape(pop1_h))
+										# print('pop1_mut_n1')
+										# print(np.shape(pop1_mut_n1))
+										# print('pop1_freq')
+										# print(np.shape(pop1_freq))
+										# print('mut1')
+										# print(np.shape(mut1))
+										# print('pop1_overall')
+										# print(np.shape(pop1_overall))
+
+										freq_fixed = np.where(freq_overall > 0.5)[0]
+										h_fixed = h_overall[freq_fixed]
+										h_fixed_mean = np.mean(h_fixed)
+										
+										if h == 0:
+											adapt_summary_0 = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
+
+										elif h == 1:
+											adapt_summary_1 = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
+
 										elif h == 0.5:
-											hlist = np.repeat(0.5, 3000)
+											adapt_summary_half = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
 
-										# intitialize generation counter
-										gen = 0
+										else:
+											adapt_summary_variable = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
 
-										# run until maxgen
-										while gen < maxgen + 1:
+									##################
+									#HYBRIDIZATION / F1 - always choose parents from different populations 
+									##################
 
-											# genotype to phenotype (diploid):
-											phenos1 = np.dot(pop1_overall_summed, mut1) #sum mutations held by each individual
-											phenos2 = np.dot(pop2_overall_summed, mut2) #sum mutations held by each individual
+									#loop over parallel evolution - on or off
+									i_pevo = 0 
 
-											# phenotype to fitness
-											w1 = fitness(phenos1, theta1, sigma_adapt)
-											w2 = fitness(phenos2, theta2, sigma_adapt)
+									while i_pevo < len(pevo):
+										pevo_adapt = pevo[i_pevo]
 
-											# wright-fisher (multinomial) sampling, number of times each parent chosen, drawing samples from a multinomial ditribution
-											# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen. if you are more fit, you are chosen more often. 
-											parents1 = np.random.multinomial(N_adapt, w1/sum(w1))
-											off1_chrom1 = np.repeat(pop1_chrom1, parents1, axis = 0) 
-											off1_chrom2 = np.repeat(pop1_chrom2, parents1, axis = 0)
-											off1 = [off1_chrom1, off1_chrom2]
-											
-											parents2 = np.random.multinomial(N_adapt, w2/sum(w2)) # number of times each parent chosen
-											off2_chrom1 = np.repeat(pop2_chrom1, parents2, axis = 0) # offspring genotypes of pop2
-											off2_chrom2 = np.repeat(pop2_chrom2, parents2, axis = 0)
-											off2 = [off2_chrom1, off2_chrom2]
+										pevolist = np.array([1]) #this is to append the pevo values later on in the correct format to save into the data tables at the very end
 
-											# mating and recombination
-											off1 = recomb(off1)
-											off2 = recomb(off2)
-
-											# mutation and population update
-											seedlist = np.arange(1000000) #determine the seed for this run of the function
-											# hseedlist = np.arange(10000, 20000)
-
-											[pop1_genotype, pop1_overall, mut1, pop1nmuts, pop1_h, pop1newmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, hlist, pop1_h, seedlist)
-											[pop2_genotype, pop2_overall, mut2, pop2nmuts, pop2_h, pop2newmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, hlist, pop2_h, seedlist)
-
-											print('mut1')
-											print(mut1)
-											print('mut2')
-											print(mut2)
-											print('pop1_h')
-											print(pop1_h)
-
-											pop1nmutslist = np.append(pop1nmutslist, pop1nmuts)
-											pop2nmutslist = np.append(pop2nmutslist, pop2nmuts)
-
-											# remove lost mutations (all zero columns in pop)
-											[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
-											[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2, remove2] = remove_muts(pop2_genotype, mut2)
-
-											[pop1_h, pop1_overall_summed] = dealwithh(pop1_overall, pop1_h)
-											[pop2_h, pop2_overall_summed] = dealwithh(pop2_overall, pop2_h)
-
-											pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
-											pop2_h = np.delete(pop2_h, remove2, 0)
-											# print('remove1')
-											# print(remove1)
-
-											# go to next generation
-											gen += 1
-
-											#############################################
-											# CREATE THE ADAPTATION SUMMARY (of parents)
-											#############################################
-											
-											one = np.ones(len(mut1)).reshape(len(mut1), 1)
-											two = np.random.randint(low = 2, high = 3, size = len(mut2)).reshape(len(mut2), 1)
-											pop1_or_pop2 = np.vstack((one, two))
-
-											pop1_freq = (np.mean(pop1_overall, axis = 0)).reshape(np.shape(pop1_overall)[1], 1)
-											pop2_freq = (np.mean(pop2_overall, axis = 0)).reshape(np.shape(pop2_overall)[1], 1)
-											freq_overall = np.round(np.vstack((pop1_freq, pop2_freq)), 4)
-											
-											pop1_mut_n1 = mut1[:, 0].reshape(np.shape(mut1)[0], 1)
-											pop2_mut_n1 = mut2[:, 0].reshape(np.shape(mut2)[0], 1)
-											mut_n1_overall = np.round(np.vstack((pop1_mut_n1, pop2_mut_n1)), 3)
-											
-											pop1_mut_n2 = mut1[:, 1].reshape(np.shape(mut1)[0], 1)
-											pop2_mut_n2 = mut2[:, 1].reshape(np.shape(mut2)[0], 1)
-											mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3)
-
-											h_overall = np.vstack((pop1_h, pop2_h))
-
-											# print('pop1_h')
-											# print(np.shape(pop1_h))
-											# print('pop1_mut_n1')
-											# print(np.shape(pop1_mut_n1))
-											# print('pop1_freq')
-											# print(np.shape(pop1_freq))
-											# print('mut1')
-											# print(np.shape(mut1))
-											# print('pop1_overall')
-											# print(np.shape(pop1_overall))
-
-											freq_fixed = np.where(freq_overall > 0.5)[0]
-											h_fixed = h_overall[freq_fixed]
-											h_fixed_mean = np.mean(h_fixed)
-											
-											if h == 0:
-												adapt_summary_0 = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
-
-											elif h == 1:
-												adapt_summary_1 = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
-
-											elif h == 0.5:
-												adapt_summary_half = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
-
-											else:
-												adapt_summary_variable = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
-
-										##################
-										#HYBRIDIZATION / F1 - always choose parents from different populations 
-										##################
-
-										if pevo_adapt == 'off': #if there is no pevo, then do the recombination as usual. 
+										if pevo_adapt == 0: 
 
 											#genotype of hybrids
 											pop1_chrom1 = pop1_genotype[0]
@@ -688,14 +710,14 @@ def main():
 											pop1_pe_idx = np.flatnonzero(np.in1d(mut1sum, intersect))
 											pop2_pe_idx = np.flatnonzero(np.in1d(mut2sum, intersect))
 
-											print('pop1_pe_idx')
-											print(pop1_pe_idx)
-											print('pop2_pe_idx')
-											print(pop2_pe_idx)
-											print('mut1')
-											print(mut1)
-											print('mut2')
-											print(mut2)
+											# print('pop1_pe_idx')
+											# print(pop1_pe_idx)
+											# print('pop2_pe_idx')
+											# print(pop2_pe_idx)
+											# print('mut1')
+											# print(mut1)
+											# print('mut2')
+											# print(mut2)
 
 											#before doing the step below, put the genotype matrix in the correct format. horizontally stack it so that ch1 and ch2 are aligned. both ch of individuals are in the same row 
 											pop1_genotype_pe = np.hstack((pop1_chrom1, pop1_chrom2))
@@ -704,6 +726,8 @@ def main():
 											#apply the indices to the genotype matrices to find the loci that have those mut values. basically find the loci that is undergoing PE. 
 											pop1_pe_loci = pop1_genotype_pe[:, pop1_pe_idx]
 											pop2_pe_loci = pop2_genotype_pe[:, pop2_pe_idx]
+											print(pop1_pe_idx)
+											print(pop2_pe_idx)
 
 											#delete those rows from the genotype matrix, update the pop_genotype_pe matrix 
 											pop1_genotype_pe = np.delete(pop1_genotype_pe, pop1_pe_idx, axis = 1)
@@ -774,14 +798,29 @@ def main():
 												F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
 												F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
 
-										#CALCULATE KENMET - indicator of parallel evolution
-										if pevo_adapt == 'off': #if pevo is off, this is just zero. zero will saved on the output files
-											kenmet = 0 
-										else:  
-											kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx)
+											#CALCULATE KENMET - indicator of parallel evolution
+											# check which mutations are fixed
+											i = 0 
+											pop1_pe_idx_checked = 0										
+											while i < len(pop1_pe_idx):
+												if pop1_freq[pop1_pe_idx[i]] >= 0.10: 
+													pop1_pe_idx_checked += 1
+												i += 1 
 
-										print(kenmet)
+											pop2_pe_idx_checked = 0									
+											i = 0 
+											while i < len(pop2_pe_idx):
+												if pop2_freq[pop2_pe_idx[i]] >= 0.10: 
+													pop2_pe_idx_checked += 1
+												i += 1 
 
+											if pevo_adapt == 0:
+												kenmet = 0
+											else: 
+												kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe_idx_checked)
+
+											print(kenmet)
+										 
 										#save the hybrid genotypes:
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
 										hybrid_chrom2 = np.vstack((F1_after_recomb1_chrom2, F1_after_recomb2_chrom2))
@@ -1002,6 +1041,7 @@ def main():
 												F2_dist_calc[i] = F2_dist2[i]
 											i += 1
 
+
 										#######################
 										# SAVE THE DATA 
 										#######################
@@ -1011,14 +1051,21 @@ def main():
 										w1 = np.reshape(w1, (len(w1), 1))
 										w2 = np.reshape(w2, (len(w2), 1))
 
+										k = 0 
+										while k < len(hybrid_pheno):
+											pevolist = np.vstack((pevolist, pevo_adapt))
+											k += 1
+
+										pevolist = np.delete(pevolist, 0, axis = 0)
+										
 										# SAVE PHENO DATA / PHENOTYPES 
 										pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), np.reshape(np.repeat(h, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), 
-											np.reshape(np.repeat(alpha_adapt, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), phenos1, phenos2, hybrid_pheno, F2_phenotype])
+											np.reshape(np.repeat(alpha_adapt, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), phenos1, phenos2, hybrid_pheno, F2_phenotype, pevolist])
 										np.savetxt(fileHandle_B, pheno_data, fmt = '%.3f', delimiter = ',')
 										
 										# SAVE THE H VALUES / SUMMARY 
 										sum_data = np.column_stack(np.array(([round(angles[j]*180/math.pi,2), rep+1, np.round(opt_dist * (2*(1-math.cos(angles[j])))**(0.5), 3), phenos1_1, phenos1_2, phenos2_1, phenos2_2, hybrid_phenos1, hybrid_phenos2, F2_phenos_1, F2_phenos_2, np.round(h_averaged, 3), h_fixed_mean, u_adapt, sigma_adapt, alpha_adapt, opt_dist, kenmet, pevo_adapt])))
-										np.savetxt(fileHandle_A, sum_data, fmt = '%.3s', delimiter = ',') 
+										np.savetxt(fileHandle_A, sum_data, fmt = '%.3f', delimiter = ',') 
 										
 										# SAVE THE MUT SUMMARY / ADAPTATION
 										adapt_summary = np.vstack((adapt_summary_variable))
@@ -1034,8 +1081,9 @@ def main():
 										f = np.reshape(np.repeat(round(angles[j]*180/math.pi,2), np.shape(w1)[0], axis = 0), np.shape(w1)[0], 1)
 										g = np.reshape(np.repeat(h, np.shape(w1)[0], axis = 0), np.shape(w1)[0], 1)
 										i = np.reshape(np.repeat(rep+1, np.shape(w1)[0], axis = 0), np.shape(w1)[0], 1)
+										q = np.reshape(np.repeat(pevo_adapt, np.shape(w1)[0], axis = 0), np.shape(w1)[0], 1)
 
-										fitness_sum = np.column_stack((i, f, w1, w2, h_fit, F2_fit, g, a, b, c, d, e, F1_dist1, F1_dist2, F1_dist_calc, F2_dist1, F2_dist2, F2_dist_calc))
+										fitness_sum = np.column_stack((i, f, w1, w2, h_fit, F2_fit, g, a, b, c, d, e, F1_dist1, F1_dist2, F1_dist_calc, F2_dist1, F2_dist2, F2_dist_calc, q))
 										np.savetxt(fileHandle_D, fitness_sum, fmt = '%.3f', delimiter = ',')
 
 										#CREATE THE FITNESS ARRAY 
@@ -1045,44 +1093,49 @@ def main():
 										hF1_fit_mean = np.mean(fitness_sum[:, 4].reshape(np.shape(fitness_sum)[0], 1), axis = 0)
 										hF2_fit_mean = np.mean(fitness_sum[:, 5].reshape(np.shape(fitness_sum)[0], 1), axis = 0)
 
-										fit_mean = np.column_stack((rep+1, np.round(angles[j]*180/math.pi,2), w1_mean, w2_mean, hF1_fit_mean, hF2_fit_mean, h, N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n)) # , (round(angles[j]*180/math.pi,2), N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n)))
+
+										fit_mean = np.column_stack((rep+1, np.round(angles[j]*180/math.pi,2), w1_mean, w2_mean, hF1_fit_mean, hF2_fit_mean, h, N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, pevo_adapt)) # , (round(angles[j]*180/math.pi,2), N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n)))
 										np.savetxt(fileHandle_E, fit_mean, fmt = '%.3f', delimiter = ',')
 
 										# print an update
 										if h == 9:
-											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%d, pevo=%s' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
+											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%d, pevo=%f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 										else:
-											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%s, pevo=%s' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
+											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%s, pevo=%f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 
-										# go to next rep
-										rep += 1
+										#go to the next pevo value
+										i_pevo += 1 
 
-									#go to next optimum
-									j += 1
+										print(mut1)
+										print(mut2)
 
-								#next dimension
-								l += 1
 
-							#next opt_dist
-							i_opt_dist += 1 
-							
-							#next u_adapt 
-							# i_u += 1 	
-							
-						#next alpha_adapt value
-						i_alpha += 1
+									# go to next rep
+									rep += 1
 
-					#go to next sigma value
-					i_sigma += 1
+								#go to next optimum
+								j += 1
 
-				#go to the next h value 
-				i_dom += 1
+							#next dimension
+							l += 1
 
-			#go to next N value
-			i_N += 1
+						#next opt_dist
+						i_opt_dist += 1 
+						
+						#next u_adapt 
+						# i_u += 1 	
+						
+					#next alpha_adapt value
+					i_alpha += 1
 
-		#go to the next pevo value
-		i_pevo += 1
+				#go to next sigma value
+				i_sigma += 1
+
+			#go to the next h value 
+			i_dom += 1
+
+		#go to next N value
+		i_N += 1
 
 	#clean up
 	close_output_files(fileHandle_A)
@@ -1108,17 +1161,17 @@ def main():
 
 	#phenotypes
 	df_pheno = pd.read_csv("phenotypes%s.csv" %(sim_id), header = None)
-	df_pheno.columns = ['individuals', 'reps', 'angle', 'opt_dist', 'h', 'alpha', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_hybrid_phenos1', 'F1_hybrid_phenos2', 'F2_hybrid_phenos1', 'F2_hybrid_phenos2']
+	df_pheno.columns = ['individuals', 'reps', 'angle', 'opt_dist', 'h', 'alpha', 'phenos1_1', 'phenos1_2', 'phenos2_1', 'phenos2_2', 'F1_hybrid_phenos1', 'F1_hybrid_phenos2', 'F2_hybrid_phenos1', 'F2_hybrid_phenos2', 'pevo']
 	df_pheno.to_csv("phenotypes%s.csv" %(sim_id))
 
 	#individual fitness
 	df_fitness = pd.read_csv("fitness%s.csv" %(sim_id), header = None)
-	df_fitness.columns = ['rep', 'angle', 'parent1', 'parent2', 'F1', 'F2', 'h', 'N', 'sigma', 'u', 'alpha', 'opt_dist', 'F1_dist1', 'F1_dist2', 'F1_dist_calc', 'F2_dist1', 'F2_dist2', 'F2_dist_calc']
+	df_fitness.columns = ['rep', 'angle', 'parent1', 'parent2', 'F1', 'F2', 'h', 'N', 'sigma', 'u', 'alpha', 'opt_dist', 'F1_dist1', 'F1_dist2', 'F1_dist_calc', 'F2_dist1', 'F2_dist2', 'F2_dist_calc', 'pevo']
 	df_fitness.to_csv("fitness%s.csv" %(sim_id))
 
 	#fitMean
 	df_fitMean = pd.read_csv("fitMean%s.csv" %(sim_id), header = None)
-	df_fitMean.columns = ['rep', 'angle', 'parent1', 'parent2', 'F1', 'F2', 'h', 'N', 'sigma', 'u', 'alpha', 'opt_dist', 'n']
+	df_fitMean.columns = ['rep', 'angle', 'parent1', 'parent2', 'F1', 'F2', 'h', 'N', 'sigma', 'u', 'alpha', 'opt_dist', 'n', 'pevo']
 	df_fitMean.to_csv("fitMean%s.csv" %(sim_id))
 
 
