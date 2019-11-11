@@ -5,6 +5,7 @@ import csv
 import math
 import pandas as pd
 import os
+from numpy.random import RandomState
 
 
 ######################################################################
@@ -143,24 +144,97 @@ def recomb(surv):
 	# return off
 
 
-def mutate(off, u_adapt, alpha, n, mut, popnmuts, mutlist, pevo):
+# def mutate(off, u_adapt, alpha, n, mut, popnmuts, mutlist):
+# 	"""
+# 	This function creates mutations and updates population
+# 	"""
+# 	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of off random numbers as between 0 and 1) size = number of columns of off (number of individuals)
+# 	whomuts = np.where(rand3 < u_adapt) #indices of mutants. each refer to the index of the individuals in the off matrix. 
+# 	nmuts = np.sum(rand3 < u_adapt)
+# 	newmuts = np.random.normal(0, alpha, size = (nmuts, n))
+	
+# 	# if sum(popnmuts) == 0: #if we haven't generated any mutations yet (if this is the 1st time we are calling the mut function) just pick the first n rows from the mut matrix 
+# 	# 	newmuts = mutlist[0: nmuts] #mutlist is the main mutation array we generate in the beginning and pick from later on. for the 1st generation, pick the first nmuts rows. 
+
+# 	# else: #if we already generated mutations before, meaning if this isnt the 1st generation
+# 	# 	newmuts = mutlist[int(np.sum(popnmuts)): int(np.sum(popnmuts)) + nmuts] 
+
+# 	#pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants. from the identity array, only pick the rows of individuls that had a lower nmuts value than alpha. then append them next to the individuals themselves. 
+# 	pop_chrom1 = np.split(off, 2, axis = 1)[0] #split the off array into 2 column wise. left side chrom1, right is chrom2. 
+# 	pop_chrom2 = np.split(off, 2, axis = 1)[1]
+	
+# 	#update pop_chrom1
+# 	added_muts = np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]) #pick the rows of mutated individuals from the identity array
+# 	pop_chrom1 = np.append(pop_chrom1, added_muts, axis=1) #update pop_chrom1 by appending the mutation matrix
+
+# 	#update pop_chrom2
+# 	zero = np.zeros(N_adapts[0] * np.shape(added_muts)[1]).reshape(N_adapts[0], np.shape(added_muts)[1]).astype(int) #create an array of zeros. rows: n_adapts columns: same as added_muts. chrom2 doesnt mutate, so we add the zeros array. 
+# 	pop_chrom2 = np.append(pop_chrom2, zero, axis = 1) #append zero array to chrom2
+
+# 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
+# 	pop_genotype = np.append(pop_chrom1, pop_chrom2, axis = 1) #both chromosomes present
+
+# 	pop_overall = (pop_chrom1 + pop_chrom2) / 2 #chromosomes averaged 
+
+# 	mut = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
+	
+# 	return [newmuts, pop_genotype, pop_overall, mut, nmuts]
+
+def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seedlist):
 	"""
 	This function creates mutations and updates population
 	"""
+
 	rand3 = np.random.uniform(size = len(off)) #random uniform number in [0,1] for each offspring [or loci??]. (creates number of off random numbers as between 0 and 1) size = number of columns of off (number of individuals)
 	whomuts = np.where(rand3 < u_adapt) #indices of mutants. each refer to the index of the individuals in the off matrix. 
 	nmuts = np.sum(rand3 < u_adapt)
 
-	if pevo == 'off': #normally pick the new mutations 
-		newmuts = np.random.normal(0, alpha, size = (nmuts, n)) #phenotypic effect of new mutations. 0=mean, alpha=sd (how far you from the mean) rows:nmuts coloumns=n. each pair is x and y coordinates. they tell you how far and which direction you go away from the origin 
+	#do the mutations by seeding 
+	if np.sum(nmuts) == 0:
+		newmuts = np.array([])
+		mut = mut 
 
-	else: #if PE is off
-		if sum(popnmuts) == 0: #if we haven't generated any mutations yet (if this is the 1st time we are calling the mut function) just pick the first n rows from the mut matrix 
-			newmuts = mutlist[0: nmuts] #mutlist is the main mutation array we generate in the beginning and pick from later on. for the 1st generation, pick the first nmuts rows. 
+	else:	
 
-		else: #if we already generated mutations before, meaning if this isnt the 1st generation
-			newmuts = mutlist[int(np.sum(popnmuts)): int(np.sum(popnmuts)) + nmuts] 
+		seed_idx = seedlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
 
+		newmuts_collected = np.array([])
+		i = 0 
+		while i < nmuts:
+			idx_used = seed_idx[i]
+			mut_seed = seedlist[idx_used]
+			mutstate = RandomState(mut_seed)
+			newmuts = mutstate.normal(0, alpha, size = (1, n))
+			newmuts_collected = np.append(newmuts_collected, newmuts)			
+			i += 1 
+
+		a = int(len(newmuts_collected)/2)
+		newmuts_collected = np.reshape(newmuts_collected, (a, n))
+
+
+		pop_new_h = np.array([])	
+		i = 0 
+		while i < nmuts: 
+			idx_used = seed_idx[i]
+			h_seed = seedlist[idx_used]
+			hstate = RandomState(h_seed)
+			newh = hstate.uniform(0, 1, size = 1)
+			pop_new_h = np.append(pop_new_h, newh)
+
+			i += 1 
+		pop_h = np.append(pop_h, pop_new_h)
+		pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1))
+
+		mut = np.vstack((mut, newmuts_collected)) 
+
+		# newmuts = mutstate.normal(0, alpha, size = (nmuts, n)) #pe is off, pick mutations the usual way
+		# # newmuts = mutlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts] #pe is on, do mutations by picking from the mutlist 
+
+		# pop_new_h = hstate.uniform(0, 1, size = nmuts) #pe is off, pick the h values usual way, randomly 
+		# pop_new_h = hlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
+		# pop_h = np.append(pop_h, pop_new_h)
+		# pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1))
+	
 	#pop = np.append(off, np.transpose(np.identity(len(off), dtype=int)[whomuts[0]]), axis=1) #add new loci and identify mutants. from the identity array, only pick the rows of individuls that had a lower nmuts value than alpha. then append them next to the individuals themselves. 
 	pop_chrom1 = np.split(off, 2, axis = 1)[0] #split the off array into 2 column wise. left side chrom1, right is chrom2. 
 	pop_chrom2 = np.split(off, 2, axis = 1)[1]
@@ -176,11 +250,10 @@ def mutate(off, u_adapt, alpha, n, mut, popnmuts, mutlist, pevo):
 	#append pop_chrom1 and pop_chrom2 horizontally to make the pop matrix. each row is one individual. each row has the both chromosomes. left: chrom1 right: chrom2
 	pop_genotype = np.append(pop_chrom1, pop_chrom2, axis = 1) #both chromosomes present
 
-	pop_overall = (pop_chrom1 + pop_chrom2) / 2 #chromosomes averaged 
-
-	mut = np.vstack((mut, newmuts)) #append effect of new mutations to mutation list
+	pop_overall = (pop_chrom1 + pop_chrom2) / 2 #chromosomes averaged
 	
-	return [newmuts, pop_genotype, pop_overall, mut, nmuts]
+	return [pop_genotype, pop_overall, mut, nmuts, pop_h, newmuts]
+
 
 def which_index(pop):
 	return np.array([
@@ -210,44 +283,23 @@ def add_h(pop_overall, pop_h, h):
 
 	return [pop_overall_summed]
 
-def pick_h(popnmutlist, nmuts, pop_h, hlist):
+def dealwithh(pop_overall, pop_h):
 
-	if np.sum(popnmutlist) == 0: #if we haven't generated any mutations yet (if this is the 1st time we are calling the mut function) just pick the first n rows from the mut matrix 
-		pop_new_h = hlist[0: nmuts] #mutlist is the main mutation array we generate in the beginning and pick from later on. for the 1st generation, pick the first nmuts rows. 
+	# make a new array where all 0.5 are 0. 
+	pop_overall_zero = np.copy(pop_overall)
+	pop_overall_zero[pop_overall_zero == 0.5] = 0 
 
-	else: #if we already generated mutations before, meaning if this isnt the 1st generation
-		pop_new_h = hlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts] 
+	# make a new array where all 1 are 0. we will sum these later to have the overall again. 
+	pop_overall_h = np.copy(pop_overall) 
+	pop_overall_h[pop_overall_h == 1] = 0 
 
-	pop_h = np.append(pop_h, pop_new_h)
-	pop_h = np.reshape(pop_h, (len(pop_h), 1))
+	for x in range(0, np.shape(pop_overall_h)[1]):
+		pop_overall_h[:, x - 1][pop_overall_h[:, x - 1] == 0.5] = pop_h[x - 1]
 
-	return pop_h
+	# pop_overall_summed is the same as pop_overall but only h values added 
+	pop_overall_summed = pop_overall_h + pop_overall_zero
 
-def generate_h(h, pop_h, pop_newmuts): 
-
-	if h == 9: #h is random
-		# generate new h values
-		pop_h_value = np.round(np.random.uniform(low = 0, high = 1, size = len(pop_newmuts + 1)).reshape(len(pop_newmuts), 1), 2)
-
-		# this the overall list where we save all the h values 
-		pop_h = np.append(pop_h, pop_h_value)
-		pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1)) #reshape into one column 
-
-
-	elif h == 'options': #h is 0, 1 or 0.5
-		# generate new h values
-		pop_h_value = np.round(np.random.choice(options, len(pop_newmuts)).reshape(len(pop_newmuts), 1), 2)
-
-		# this the overall list where we save all the h values 
-		pop_h = np.append(pop_h, pop_h_value)
-		pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1)) #reshape into one column 
-
-
-	else: #h is 0.5 
-		pop_h = np.append(pop_h, np.repeat(h, len(pop_newmuts))) 
-		pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1)) #reshape into one column
-
-	return pop_h
+	return pop_h, pop_overall_summed
 
 
 def remove_muts(pop_genotype, mut): #here pop is the same thing as off
@@ -299,7 +351,6 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx):
 
 nreps = 1 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
-data_dir = 'data'
 
 N_adapts = [1000] #number of diploid individuals (positive integer)
 
@@ -308,7 +359,7 @@ alpha_adapts = [0.1] #mutational sd (positive real number)
 
 # u_adapt = (0.0001/alpha_adapt)
 
-sigma_adapts = [5] #selection strengths
+sigma_adapts = [0.5] #selection strengths
 
 opt_dists = [1] #distance to optima
 
@@ -360,7 +411,7 @@ def main():
 						alpha_adapt = alpha_adapts[i_alpha]
 
 						#find over mutation rate 
-						u_adapt = (0.00001/alpha_adapt)
+						u_adapt = (0.0001/alpha_adapt)
 						#can uncomment this part later and add a u+=1 at the end to loop over u values 
 						# i_u = 0 
 						# while i_u < len(u_adapts):
@@ -425,37 +476,9 @@ def main():
 										pop1_overall_summed = np.copy(pop1_overall)
 										pop2_overall_summed = np.copy(pop2_overall)
 
-										if pevo_adapt == 'off':
-											if h == 9:
-												# this is the only time we use these first values 
-												pop1_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
-												pop2_first_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
+										pop1_h = np.random.uniform(low = 0, high = 1, size = 1)
+										pop2_h = np.random.uniform(low = 0, high = 1, size = 1)
 
-												pop1_h = np.copy(pop1_first_h)
-												pop2_h = np.copy(pop2_first_h)
-
-											elif h == 'options': 
-												options = np.array([0, 1, 0.5])
-
-												pop1_first_h = np.round(np.random.choice(options, 1), 2)
-												pop2_first_h = np.round(np.random.choice(options, 1), 2)
-
-												pop1_h = np.copy(pop1_first_h)
-												pop2_h = np.copy(pop2_first_h)
-
-											else: 
-												# h is an integer and not picked from random distribution. attach the first h value to the pop_h matrices 
-												pop1_h = h
-												pop2_h = h 
-
-										else:
-											pop1_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
-											pop2_h = np.round(np.random.uniform(low = 0, high = 1, size = 1), 2)
-
-										'''	
-										Initialize the nmuts arrays for both populations. they will be empty in the beginning since they havent started mutating yet. we need these nmuts arrays for PE. 
-										These array will have nmuts values for each generation.
-										'''
 										pop1nmutslist = np.array([])
 										pop2nmutslist = np.array([])
 
@@ -464,11 +487,12 @@ def main():
 										mutlist = np.random.normal(0, alpha_adapt, size = (3000, n)) #create the list of mutations to pick from later on in PE, generate the mut array 
 										mutlistsum = np.sum(mutlist, axis = 1)# add across the rows
 										mutidx = np.unique(mutlistsum, return_index = True)[1]#find the indices unique elements 
-										mutlist = mutlist[mutidx]# apply the indices to the mutlist array and update it 
+										mutlist = mutlist[mutidx]# apply the indices to the mutlist array and update it
 
 										# generate the h values array
 										if h == 9:
 											hlist = np.random.uniform(0, alpha_adapt, size = (3000, 1))
+										
 										elif h == 0.5:
 											hlist = np.repeat(0.5, 3000)
 
@@ -486,8 +510,7 @@ def main():
 											w1 = fitness(phenos1, theta1, sigma_adapt)
 											w2 = fitness(phenos2, theta2, sigma_adapt)
 
-											# wright-fisher (multinomial) sampling
-											# number of times each parent chosen, drawing samples from a multinomial ditribution
+											# wright-fisher (multinomial) sampling, number of times each parent chosen, drawing samples from a multinomial ditribution
 											# N_adapt = number of experiments, w1/sum(w1 = probability of parent1 being chosen. if you are more fit, you are chosen more often. 
 											parents1 = np.random.multinomial(N_adapt, w1/sum(w1))
 											off1_chrom1 = np.repeat(pop1_chrom1, parents1, axis = 0) 
@@ -504,8 +527,18 @@ def main():
 											off2 = recomb(off2)
 
 											# mutation and population update
-											[pop1_newmuts, pop1_genotype, pop1_overall, mut1, pop1nmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, pevo_adapt)
-											[pop2_newmuts, pop2_genotype, pop2_overall, mut2, pop2nmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, pevo_adapt)
+											seedlist = np.arange(1000000) #determine the seed for this run of the function
+											# hseedlist = np.arange(10000, 20000)
+
+											[pop1_genotype, pop1_overall, mut1, pop1nmuts, pop1_h, pop1newmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, hlist, pop1_h, seedlist)
+											[pop2_genotype, pop2_overall, mut2, pop2nmuts, pop2_h, pop2newmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, hlist, pop2_h, seedlist)
+
+											print('mut1')
+											print(mut1)
+											print('mut2')
+											print(mut2)
+											print('pop1_h')
+											print(pop1_h)
 
 											pop1nmutslist = np.append(pop1nmutslist, pop1nmuts)
 											pop2nmutslist = np.append(pop2nmutslist, pop2nmuts)
@@ -514,35 +547,14 @@ def main():
 											[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
 											[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2, remove2] = remove_muts(pop2_genotype, mut2)
 
-											#============================
-											#Deal with h values
-											#============================
+											[pop1_h, pop1_overall_summed] = dealwithh(pop1_overall, pop1_h)
+											[pop2_h, pop2_overall_summed] = dealwithh(pop2_overall, pop2_h)
 
-											if pevo_adapt == 'off': #pevo is off, no PE
+											pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
+											pop2_h = np.delete(pop2_h, remove2, 0)
+											# print('remove1')
+											# print(remove1)
 
-												pop1_h = generate_h(h, pop1_h, pop1_newmuts)
-												pop2_h = generate_h(h, pop2_h, pop2_newmuts)
-
-												pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
-												pop2_h = np.delete(pop2_h, remove2, 0)  										
-
-												[pop1_overall_summed] = add_h(pop1_overall, pop1_h, h)
-												[pop2_overall_summed] = add_h(pop2_overall, pop2_h, h)
-
-
-											else: #if there is PE
-
-												if h == 9: #h is random
-													
-													pop1_h = pick_h(pop1nmutslist, pop1nmuts, pop1_h, hlist)
-													pop2_h = pick_h(pop2nmutslist, pop2nmuts, pop2_h, hlist)
-
-													pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
-													pop2_h = np.delete(pop2_h, remove2, 0)
-
-													[pop1_overall_summed] = add_h(pop1_overall, pop1_h, h)
-													[pop2_overall_summed] = add_h(pop2_overall, pop2_h, h)
-											
 											# go to next generation
 											gen += 1
 
@@ -568,6 +580,17 @@ def main():
 
 											h_overall = np.vstack((pop1_h, pop2_h))
 
+											# print('pop1_h')
+											# print(np.shape(pop1_h))
+											# print('pop1_mut_n1')
+											# print(np.shape(pop1_mut_n1))
+											# print('pop1_freq')
+											# print(np.shape(pop1_freq))
+											# print('mut1')
+											# print(np.shape(mut1))
+											# print('pop1_overall')
+											# print(np.shape(pop1_overall))
+
 											freq_fixed = np.where(freq_overall > 0.5)[0]
 											h_fixed = h_overall[freq_fixed]
 											h_fixed_mean = np.mean(h_fixed)
@@ -583,7 +606,6 @@ def main():
 
 											else:
 												adapt_summary_variable = np.column_stack((pop1_or_pop2, freq_overall, mut_n1_overall, mut_n2_overall, h_overall))
-
 
 										##################
 										#HYBRIDIZATION / F1 - always choose parents from different populations 
@@ -604,7 +626,6 @@ def main():
 
 											pop2_zero1 = np.zeros(len(pop2_chrom1) * pop1_chrom1.shape[1]).reshape(len(pop1_chrom1), pop1_chrom1.shape[1])
 											pop2_zero2 = np.zeros(len(pop2_chrom2) * pop1_chrom2.shape[1]).reshape(len(pop1_chrom2), pop1_chrom2.shape[1])
-
 
 											#attach the zero matrices
 											pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1))
@@ -660,14 +681,8 @@ def main():
 											mut1sum = np.sum(mut1, axis = 1)
 											mut2sum = np.sum(mut2, axis = 1)
 
-											print('mut1sum')
-											print(mut1sum)
-											print('mut2sum')
-											print(mut2sum)
-
 											#find their intersection. this doesnt return indices, just returns the value(s) that is the same between the matrix and the intersection 
 											intersect = np.intersect1d(mut1sum, mut2sum)
-											print(intersect)
 											
 											#find indices in both mutsum arrays where mutsum has the same values as the intersect. columns that have those indices in the genotype matrices has the same mutations 
 											pop1_pe_idx = np.flatnonzero(np.in1d(mut1sum, intersect))
@@ -677,17 +692,14 @@ def main():
 											print(pop1_pe_idx)
 											print('pop2_pe_idx')
 											print(pop2_pe_idx)
+											print('mut1')
+											print(mut1)
+											print('mut2')
+											print(mut2)
 
 											#before doing the step below, put the genotype matrix in the correct format. horizontally stack it so that ch1 and ch2 are aligned. both ch of individuals are in the same row 
 											pop1_genotype_pe = np.hstack((pop1_chrom1, pop1_chrom2))
 											pop2_genotype_pe = np.hstack((pop2_chrom1, pop2_chrom2))
-
-
-											print('pop1_genotype_pe')
-											print(pop1_genotype_pe)
-											print('pop2_genotype_pe')
-											print(pop2_genotype_pe)
-
 
 											#apply the indices to the genotype matrices to find the loci that have those mut values. basically find the loci that is undergoing PE. 
 											pop1_pe_loci = pop1_genotype_pe[:, pop1_pe_idx]
@@ -767,6 +779,8 @@ def main():
 											kenmet = 0 
 										else:  
 											kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx, pop2_genotype_pe, pop2_pe_idx)
+
+										print(kenmet)
 
 										#save the hybrid genotypes:
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
