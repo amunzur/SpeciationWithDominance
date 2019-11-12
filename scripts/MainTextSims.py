@@ -196,13 +196,13 @@ def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seed
 
 	else:	
 
-		seed_idx = [int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
+		# seed_idx = seedlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
 
 		newmuts_collected = np.array([])
 		w = 0 
 		while w < nmuts:
 			# idx_used = seed_idx[w]
-			mut_seed = seedlist[seed_idx[w]]
+			mut_seed = seedlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
 			mutstate = RandomState(mut_seed)
 			newmuts = mutstate.normal(0, alpha, size = (1, n))
 			newmuts_collected = np.append(newmuts_collected, newmuts)			
@@ -215,8 +215,8 @@ def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seed
 		pop_new_h = np.array([])	
 		w = 0 
 		while w < nmuts: 
-			idx_used = seed_idx[w]
-			h_seed = seedlist[int(idx_used/1000)]
+			# idx_used = seed_idx[w]
+			h_seed = seedlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
 			hstate = RandomState(h_seed)
 			newh = hstate.uniform(0, 1, size = 1)
 			pop_new_h = np.append(pop_new_h, newh)
@@ -349,7 +349,7 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 10 #number of replicates for each set of parameters
+nreps = 4 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
 N_adapts = [10] #number of diploid individuals (positive integer)
@@ -371,7 +371,7 @@ dom = [9]
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
 
-pevo = [1, 0] #this is parallel evolution. either on or off. 
+pevo = [0, 1] #this is parallel evolution. either on or off. 
 
 
 ######################################################################
@@ -630,10 +630,11 @@ def main():
 
 									while i_pevo < len(pevo):
 										pevo_adapt = pevo[i_pevo]
+										print('pevo_adapt', pevo_adapt)
 
 										pevolist = np.array([1]) #this is to append the pevo values later on in the correct format to save into the data tables at the very end
 
-										if pevo_adapt == 0: 
+										if pevo_adapt == 0: #pevo is off
 
 											#genotype of hybrids
 											pop1_chrom1 = pop1_genotype[0]
@@ -695,6 +696,8 @@ def main():
 												F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
 												F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
 
+											kenmet = 0 
+
 										else: #if pevo is on (there is parallel evolution), then do something different: 
 											
 											#=====================================================
@@ -726,8 +729,6 @@ def main():
 											#apply the indices to the genotype matrices to find the loci that have those mut values. basically find the loci that is undergoing PE. 
 											pop1_pe_loci = pop1_genotype_pe[:, pop1_pe_idx]
 											pop2_pe_loci = pop2_genotype_pe[:, pop2_pe_idx]
-											print(pop1_pe_idx)
-											print(pop2_pe_idx)
 
 											#delete those rows from the genotype matrix, update the pop_genotype_pe matrix 
 											pop1_genotype_pe = np.delete(pop1_genotype_pe, pop1_pe_idx, axis = 1)
@@ -819,7 +820,10 @@ def main():
 											else: 
 												kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe_idx_checked)
 
-											print(kenmet)
+											print('kenmet', kenmet)
+
+
+										
 										 
 										#save the hybrid genotypes:
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
@@ -1105,10 +1109,6 @@ def main():
 
 										#go to the next pevo value
 										i_pevo += 1 
-
-										print(mut1)
-										print(mut2)
-
 
 									# go to next rep
 									rep += 1
