@@ -349,10 +349,10 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 4 #number of replicates for each set of parameters
+nreps = 2 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [10] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 # u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
@@ -365,7 +365,7 @@ opt_dists = [1] #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 3000 #total number of generations populations adapt for
+maxgen = 30 #total number of generations populations adapt for
 
 dom = [9]
 # 9 -> variable, chosen from random distribution
@@ -820,10 +820,7 @@ def main():
 											else: 
 												kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe_idx_checked)
 
-											print('kenmet', kenmet)
-
-
-										
+											print('kenmet', kenmet)				
 										 
 										#save the hybrid genotypes:
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
@@ -1052,6 +1049,16 @@ def main():
 
 										# reshape the fitness arrays. only 1 column. 
 										h_fit = np.reshape(h_fit, (len(h_fit), 1))
+
+										if pevo_adapt == 0:
+											a = 99999
+
+										else:
+											a = 7777
+
+
+										lol = np.repeat(a, 2000).reshape(1000, 2)
+
 										w1 = np.reshape(w1, (len(w1), 1))
 										w2 = np.reshape(w2, (len(w2), 1))
 
@@ -1064,7 +1071,7 @@ def main():
 										
 										# SAVE PHENO DATA / PHENOTYPES 
 										pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), np.reshape(np.repeat(h, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), 
-											np.reshape(np.repeat(alpha_adapt, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), phenos1, phenos2, hybrid_pheno, F2_phenotype, pevolist])
+											np.reshape(np.repeat(alpha_adapt, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), phenos1, phenos2, lol, F2_phenotype, pevolist])
 										np.savetxt(fileHandle_B, pheno_data, fmt = '%.3f', delimiter = ',')
 										
 										# SAVE THE H VALUES / SUMMARY 
@@ -1090,6 +1097,8 @@ def main():
 										fitness_sum = np.column_stack((i, f, w1, w2, h_fit, F2_fit, g, a, b, c, d, e, F1_dist1, F1_dist2, F1_dist_calc, F2_dist1, F2_dist2, F2_dist_calc, q))
 										np.savetxt(fileHandle_D, fitness_sum, fmt = '%.3f', delimiter = ',')
 
+										print(np.shape(hybrid_pheno))
+
 										#CREATE THE FITNESS ARRAY 
 										#calculate the mean fitnesses 
 										w1_mean = np.mean(fitness_sum[:, 2].reshape(np.shape(fitness_sum)[0], 1), axis = 0)
@@ -1097,15 +1106,14 @@ def main():
 										hF1_fit_mean = np.mean(fitness_sum[:, 4].reshape(np.shape(fitness_sum)[0], 1), axis = 0)
 										hF2_fit_mean = np.mean(fitness_sum[:, 5].reshape(np.shape(fitness_sum)[0], 1), axis = 0)
 
-
 										fit_mean = np.column_stack((rep+1, np.round(angles[j]*180/math.pi,2), w1_mean, w2_mean, hF1_fit_mean, hF2_fit_mean, h, N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, pevo_adapt)) # , (round(angles[j]*180/math.pi,2), N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n)))
 										np.savetxt(fileHandle_E, fit_mean, fmt = '%.3f', delimiter = ',')
 
 										# print an update
 										if h == 9:
-											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%d, pevo=%f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
+											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%d, pevo=%0.1f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 										else:
-											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%s, pevo=%f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
+											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%s, pevo=%0.1f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 
 										#go to the next pevo value
 										i_pevo += 1 
