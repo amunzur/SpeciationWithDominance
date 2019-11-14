@@ -352,10 +352,9 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 nreps = 2 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [10] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
-# u_adapts mutation probability per generation per genome (0<u<1). if this is 0.5, this means half of the population is likely to mutate, defined in the script as well 
 
 # u_adapt = (0.0001/alpha_adapt)
 
@@ -371,7 +370,11 @@ dom = [9]
 # 9 -> variable, chosen from random distribution
 # options -> 0, 0.5, 1
 
-pevo = [0, 1] #this is parallel evolution. either on or off. 
+pevo = [0, 1] #this is parallel evolution. either on or off. 0 means off, 1 means on. 
+
+svar = [0, 1] #standing variation. 0 means off, 1 means on. 
+
+
 
 
 ######################################################################
@@ -445,11 +448,6 @@ def main():
 
 								#loop over all replicates
 								rep = 0
-								trial1 = np.array([0, 0])
-								trial2 = np.array([0, 0])
-							
-								
-
 
 								while rep < nreps:
 
@@ -468,6 +466,8 @@ def main():
 
 									pop2_chrom1 = popfound2 # 1st chromosome of pop2
 									pop2_chrom2 = popfound2 # 2nd chromosome of pop2
+
+									print(popfound1)
 
 									pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
 									pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
@@ -538,15 +538,7 @@ def main():
 										# hseedlist = np.arange(10000, 20000)
 
 										[pop1_genotype, pop1_overall, mut1, pop1nmuts, pop1_h, pop1newmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, hlist, pop1_h, seedlist, rep)
-										pop1newmuts = np.reshape(pop1newmuts, (len(pop1newmuts), 2))
-										trial1 = np.vstack((trial1, pop1newmuts))
-
-
-										
 										[pop2_genotype, pop2_overall, mut2, pop2nmuts, pop2_h, pop2newmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, hlist, pop2_h, seedlist, rep)
-										pop2newmuts = np.reshape(pop2newmuts, (len(pop2newmuts), 2))
-										trial2 = np.vstack((trial2, pop2newmuts))
-
 
 
 										# print('mut2')
@@ -569,8 +561,6 @@ def main():
 
 										# go to next generation
 										gen += 1
-
-
 
 										#############################################
 										# CREATE THE ADAPTATION SUMMARY (of parents)
@@ -1049,16 +1039,7 @@ def main():
 
 										# reshape the fitness arrays. only 1 column. 
 										h_fit = np.reshape(h_fit, (len(h_fit), 1))
-
-										if pevo_adapt == 0:
-											a = 99999
-
-										else:
-											a = 7777
-
-
-										lol = np.repeat(a, 2000).reshape(1000, 2)
-
+										
 										w1 = np.reshape(w1, (len(w1), 1))
 										w2 = np.reshape(w2, (len(w2), 1))
 
@@ -1071,7 +1052,7 @@ def main():
 										
 										# SAVE PHENO DATA / PHENOTYPES 
 										pheno_data = np.column_stack([np.array([i+1 for i in range(len(hybrid_pheno))]), np.array([rep+1]*len(hybrid_pheno)), np.array([round(angles[j]*180/math.pi,2)]*len(hybrid_pheno)), np.array([opt_dist * (2*(1-math.cos(angles[j])))**(0.5)]*len(hybrid_pheno)), np.reshape(np.repeat(h, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), 
-											np.reshape(np.repeat(alpha_adapt, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), phenos1, phenos2, lol, F2_phenotype, pevolist])
+											np.reshape(np.repeat(alpha_adapt, np.shape(hybrid_pheno)[0], axis = 0), np.shape(hybrid_pheno)[0], 1), phenos1, phenos2, hybrid_pheno, F2_phenotype, pevolist])
 										np.savetxt(fileHandle_B, pheno_data, fmt = '%.3f', delimiter = ',')
 										
 										# SAVE THE H VALUES / SUMMARY 
