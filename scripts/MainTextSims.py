@@ -337,7 +337,7 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 	# pop2_shared = len(pop2_pe_idx) - 1
 	pop2_total = np.shape(pop2_genotype_pe)[1] - 1
 
-	kenmet = 0.5 * ((pop1_pe_idx_checked - 1) / pop1_total + (pop2_pe_idx_checked - 1) / pop2_total)
+	kenmet = round((0.5 * ((pop1_pe_idx_checked - 1) / pop1_total + (pop2_pe_idx_checked - 1) / pop2_total)) * 100, 1)
 
 	return kenmet
 
@@ -346,10 +346,10 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 2 #number of replicates for each set of parameters
+nreps = 3 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [10] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 
@@ -361,7 +361,7 @@ opt_dists = [1] #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 2000 #total number of generations populations adapt for
+maxgen = 10 #total number of generations populations adapt for
 
 dom = [9]
 # 9 -> variable, chosen from random distribution
@@ -370,13 +370,9 @@ dom = [9]
 pevo = [0, 1] #this is parallel evolution. either on or off. 0 means off, 1 means on. 
 
 #PARAMETERS ABOUT SGV
-
 svar = 1  #standing variation. 0 means off, 1 means on. pick only 1 value. there is no loop. 
-premut = 50 # how many preadded mutations we want
-svar_freq = 0.10 #how many individuals have these mutations in the population 
-
-
-
+premut = 5 # how many preadded mutations we want
+svar_freq = 0.10 #how many individuals have each of these mutations in the population
 
 ######################################################################
 ##FUNCTION FOR POPULATIONS TO ADAPT##
@@ -482,12 +478,13 @@ def main():
 										svar_zero = np.zeros(np.shape(svar_loci)).astype(int)
 
 										i_sgv = 0 
+
 										while i_sgv < premut: 
-											rand4 = np.random.uniform(0, 1, size = N_adapt)
-											svar_where = np.where(svar_freq > rand4, rand4, 1)
-											svar_idx = np.where(svar_where == 1)
-											svar_loci[:, i_sgv][svar_idx] = 1 
-											i_sgv += 1
+											rand4 = np.random.uniform(0, 1, size = N_adapt) #generate random numbers between 0 and 1, from a random uniform distribution 
+											svar_where = np.where(svar_freq > rand4, rand4, 1) #find which ones are greater than the svar_freq, replace them with 1 
+											svar_idx = np.where(svar_where == 1) #find indices of 1
+											svar_loci[:, i_sgv][svar_idx] = 1 #apply those indices to the empty array of genotype in the beginning
+											i_sgv += 1 #go to the next mutation 
 
 										pop1_chrom1 = np.hstack((popfound1, svar_loci)) # genotype of 1st chromosome of pop1
 										pop1_chrom2 = np.hstack((popfound1, svar_zero)) # stick the zero matrix to 2nd population's genotype 
@@ -573,13 +570,10 @@ def main():
 										[pop1_genotype, pop1_overall, mut1, pop1nmuts, pop1_h, pop1newmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, hlist, pop1_h, seedlist, rep)
 										[pop2_genotype, pop2_overall, mut2, pop2nmuts, pop2_h, pop2newmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, hlist, pop2_h, seedlist, rep)
 
-										# print('mut2')
-										# print(mut2)
-
 										pop1nmutslist = np.append(pop1nmutslist, pop1nmuts)
 										pop2nmutslist = np.append(pop2nmutslist, pop2nmuts)
 
-										# # # remove lost mutations (all zero columns in pop)
+										# remove lost mutations (all zero columns in pop)
 										[pop1_chrom1, pop1_chrom2, pop1_genotype, pop1_overall, mut1, remove1] = remove_muts(pop1_genotype, mut1)
 										[pop2_chrom1, pop2_chrom2, pop2_genotype, pop2_overall, mut2, remove2] = remove_muts(pop2_genotype, mut2)
 
@@ -588,8 +582,6 @@ def main():
 
 										pop1_h = np.delete(pop1_h, remove1, 0) #remove the same rows from the pop_h matrix
 										pop2_h = np.delete(pop2_h, remove2, 0)
-										# print('remove1')
-										# print(remove1)
 
 										# go to next generation
 										gen += 1
@@ -615,25 +607,6 @@ def main():
 										mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3)
 
 										h_overall = np.vstack((pop1_h, pop2_h))
-										# print('pop1_h')
-										# print(type(pop1_h))
-										# print(pop1_h)
-										# print('pop2_h')
-										# print(pop2_h)
-
-										# print('pop1_h')
-										# print(np.shape(pop1_h))
-										# print('pop1_mut_n1')
-										# print(np.shape(pop1_mut_n1))
-										# print('pop1_freq')
-										# print(np.shape(pop1_freq))
-										# print('mut1')
-										# print(np.shape(mut1))
-										# print('pop1_overall')
-										# print(np.shape(pop1_overall))
-										# print('h_overall')
-										# print(h_overall)
-										# print('freq_fixed')
 
 										freq_fixed = np.where(freq_overall > 0.5)[0]
 										h_fixed = h_overall[freq_fixed]
@@ -671,6 +644,8 @@ def main():
 
 											pop2_chrom1 = pop2_genotype[0]
 											pop2_chrom2 = pop2_genotype[1]
+											# print('pop1_chrom1')
+											# print(pop1_chrom1)
 											
 											#make the zero matrices
 											pop1_zero1 = np.zeros(len(pop1_chrom1) * pop2_chrom1.shape[1]).reshape(len(pop2_chrom1), pop2_chrom1.shape[1])
@@ -695,6 +670,17 @@ def main():
 
 											pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
 											pop2_chrom2_hy = pop2_chrom2_has0[pairs_hybrid[:, 1]]
+											print('pop1_chrom1_hy - no pe')
+											print(pop1_chrom1_hy)
+
+											# print('pop1_chrom1_hy')
+											# print(pop1_chrom1_hy)	
+											# print('pop1_chrom2_hy')
+											# print(pop1_chrom2_hy)
+											# print('pop2_chrom1_hy')
+											# print(pop2_chrom1_hy)
+											# print('pop2_chrom2_hy')
+											# print(pop2_chrom2_hy)		
 
 											#recombination:
 											#randomly pick 0 or 1 to decide which pairs to match 
@@ -735,38 +721,59 @@ def main():
 											mut1sum = np.sum(mut1, axis = 1)
 											mut2sum = np.sum(mut2, axis = 1)
 
+											print('mut1sum')
+											print(mut1sum)
+											print('mut2sum')
+											print(mut2sum)
+
 											#find their intersection. this doesnt return indices, just returns the value(s) that is the same between the matrix and the intersection 
 											intersect = np.intersect1d(mut1sum, mut2sum)
+											print('intersect', intersect)
 											
 											#find indices in both mutsum arrays where mutsum has the same values as the intersect. columns that have those indices in the genotype matrices has the same mutations 
 											pop1_pe_idx = np.flatnonzero(np.in1d(mut1sum, intersect))
 											pop2_pe_idx = np.flatnonzero(np.in1d(mut2sum, intersect))
 
-											# print('pop1_pe_idx')
-											# print(pop1_pe_idx)
-											# print('pop2_pe_idx')
-											# print(pop2_pe_idx)
-											# print('mut1')
-											# print(mut1)
-											# print('mut2')
-											# print(mut2)
+											print('pop1_pe_idx', pop1_pe_idx)
 
 											#before doing the step below, put the genotype matrix in the correct format. horizontally stack it so that ch1 and ch2 are aligned. both ch of individuals are in the same row 
 											pop1_genotype_pe = np.hstack((pop1_chrom1, pop1_chrom2))
 											pop2_genotype_pe = np.hstack((pop2_chrom1, pop2_chrom2))
 
+											print('pop1_genotype_pe')
+											print(pop1_genotype_pe)
+											# print('pop1_pe_idx')
+											# print(pop1_pe_idx)
+
+
 											#apply the indices to the genotype matrices to find the loci that have those mut values. basically find the loci that is undergoing PE. 
 											pop1_pe_loci = pop1_genotype_pe[:, pop1_pe_idx]
 											pop2_pe_loci = pop2_genotype_pe[:, pop2_pe_idx]
+
+											print('pop1_pe_loci')
+											print(pop1_pe_loci)
+
+											# print('pop1_pe_loci')
+											# print(pop1_pe_loci)
 
 											#delete those rows from the genotype matrix, update the pop_genotype_pe matrix 
 											pop1_genotype_pe = np.delete(pop1_genotype_pe, pop1_pe_idx, axis = 1)
 											pop2_genotype_pe = np.delete(pop2_genotype_pe, pop2_pe_idx, axis = 1)
 
+											print('pop1_genotype_pe')
+											print(pop1_genotype_pe)
+
 											#stick the deleted rows at the beginning of each genotype matrix 
 											pop1_genotype_pe = np.hstack((pop1_pe_loci, pop1_genotype_pe))
 											pop2_genotype_pe = np.hstack((pop2_pe_loci, pop2_genotype_pe))
 											#=======================================================
+
+											print('pop1_genotype_pe')
+											print(pop1_genotype_pe)
+											# print('pop1_pe_idx')
+											# print(pop1_pe_idx)
+											# print()
+											# print()
 
 											#this is initially the end. do the same steps above for this set of chromosomes. 
 											pop1_chrom1 = np.split(pop1_genotype_pe, 2, axis = 1)[0]
@@ -797,7 +804,16 @@ def main():
 											pop1_chrom2_hy = pop1_chrom2_has0[pairs_hybrid[:, 0]]
 
 											pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
-											pop2_chrom2_hy = pop2_chrom2_has0[pairs_hybrid[:, 1]]
+											pop2_chrom2_hy = pop2_chrom2_has0[pairs_hybrid[:, 1]]	
+
+											print('pop1_chrom1_hy')
+											print(pop1_chrom1_hy)	
+											# print('pop1_chrom2_hy')
+											# print(pop1_chrom2_hy)
+											# print('pop2_chrom1_hy')
+											# print(pop2_chrom1_hy)
+											# print('pop2_chrom2_hy')
+											# print(pop2_chrom2_hy)								
 
 											#recombination:
 											#randomly pick 0 or 1 to decide which pairs to match 
@@ -815,7 +831,6 @@ def main():
 												F1_after_recomb2 = crossover(F1_before_recomb2)
 												F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
 												F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
-
 
 											elif num[0] == 1:
 												F1_before_recomb1 = np.concatenate(np.stack((pop1_chrom1_hy, pop2_chrom2_hy), axis = 1))
@@ -848,8 +863,6 @@ def main():
 												kenmet = 0
 											else: 
 												kenmet = calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe_idx_checked)
-
-											print('kenmet', kenmet)				
 										 
 										#save the hybrid genotypes:
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
@@ -1071,7 +1084,6 @@ def main():
 												F2_dist_calc[i] = F2_dist2[i]
 											i += 1
 
-
 										#######################
 										# SAVE THE DATA 
 										#######################
@@ -1117,8 +1129,6 @@ def main():
 										fitness_sum = np.column_stack((i, f, w1, w2, h_fit, F2_fit, g, a, b, c, d, e, F1_dist1, F1_dist2, F1_dist_calc, F2_dist1, F2_dist2, F2_dist_calc, q))
 										np.savetxt(fileHandle_D, fitness_sum, fmt = '%.3f', delimiter = ',')
 
-										print(np.shape(hybrid_pheno))
-
 										#CREATE THE FITNESS ARRAY 
 										#calculate the mean fitnesses 
 										w1_mean = np.mean(fitness_sum[:, 2].reshape(np.shape(fitness_sum)[0], 1), axis = 0)
@@ -1134,6 +1144,8 @@ def main():
 											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%d, pevo=%0.1f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
 										else:
 											print('N = %d, sigma = %.3f, u = %.3f, alpha = %.3f, opt_dist = %.2f, n=%d, angle=%r, rep=%d, h=%s, pevo=%0.1f' %(N_adapt, sigma_adapt, u_adapt, alpha_adapt, opt_dist, n, round(angles[j]*180/math.pi,2), rep+1, h, pevo_adapt)) 
+
+										print('kenmet', kenmet)	
 
 										#go to the next pevo value
 										i_pevo += 1 
