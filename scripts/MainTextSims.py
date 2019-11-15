@@ -341,6 +341,22 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 
 	return kenmet
 
+def compare_hy_ch(a, b):
+											
+	if np.shape(a)[1] != np.shape(b)[1]:
+
+		shorter = min(np.shape(a)[1], np.shape(b)[1]) #find the array with less columns 
+		
+		if np.shape(a)[1] == shorter: 
+			addthis = np.zeros(len(a)).reshape(len(a), 1)
+			a = np.hstack((a, addthis))
+
+		else: 
+			addthis = np.zeros(len(b)).reshape(len(b), 1)
+			b = np.hstack((b, addthis))
+	
+	return a, b
+
 
 ######################################################################
 ##UNIVERSAL PARAMETERS##
@@ -782,38 +798,65 @@ def main():
 											pop2_chrom1 = np.split(pop2_genotype_pe, 2, axis = 1)[0]
 											pop2_chrom2 = np.split(pop2_genotype_pe, 2, axis = 1)[1]
 											
-											#make the zero matrices
-											pop1_zero1 = np.zeros(len(pop1_chrom1) * pop2_chrom1.shape[1]).reshape(len(pop2_chrom1), pop2_chrom1.shape[1])
-											pop1_zero2 = np.zeros(len(pop1_chrom2) * pop2_chrom2.shape[1]).reshape(len(pop2_chrom2), pop2_chrom2.shape[1])
+											# #make the zero matrices
+											# pop1_zero1 = np.zeros(len(pop1_chrom1) * pop2_chrom1.shape[1]).reshape(len(pop2_chrom1), pop2_chrom1.shape[1])
+											# pop1_zero2 = np.zeros(len(pop1_chrom2) * pop2_chrom2.shape[1]).reshape(len(pop2_chrom2), pop2_chrom2.shape[1])
 
-											pop2_zero1 = np.zeros(len(pop2_chrom1) * pop1_chrom1.shape[1]).reshape(len(pop1_chrom1), pop1_chrom1.shape[1])
-											pop2_zero2 = np.zeros(len(pop2_chrom2) * pop1_chrom2.shape[1]).reshape(len(pop1_chrom2), pop1_chrom2.shape[1])
+											# pop2_zero1 = np.zeros(len(pop2_chrom1) * pop1_chrom1.shape[1]).reshape(len(pop1_chrom1), pop1_chrom1.shape[1])
+											# pop2_zero2 = np.zeros(len(pop2_chrom2) * pop1_chrom2.shape[1]).reshape(len(pop1_chrom2), pop1_chrom2.shape[1])
 
-											#attach the zero matrices
-											pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1))
-											pop1_chrom2_has0 = np.hstack((pop1_chrom2, pop1_zero2))
+											# #attach the zero matrices
+											# pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1))
+											# pop1_chrom2_has0 = np.hstack((pop1_chrom2, pop1_zero2))
 
-											pop2_chrom1_has0 = np.hstack((pop2_zero1, pop2_chrom1))
-											pop2_chrom2_has0 = np.hstack((pop2_zero2, pop2_chrom2))
+											# pop2_chrom1_has0 = np.hstack((pop2_zero1, pop2_chrom1))
+											# pop2_chrom2_has0 = np.hstack((pop2_zero2, pop2_chrom2))
 
 											#make pairs
 											pairs_hybrid = np.resize(np.random.choice(len(pop1_chrom1), size=len(pop1_chrom1), replace=False), (int(len(pop1_chrom1)/2), 2))
 
 											#pick the related chromosomes of the pairs  
-											pop1_chrom1_hy = pop1_chrom1_has0[pairs_hybrid[:, 0]]
-											pop1_chrom2_hy = pop1_chrom2_has0[pairs_hybrid[:, 0]]
+											pop1_chrom1_hy = pop1_chrom1[pairs_hybrid[:, 0]]
+											pop1_chrom2_hy = pop1_chrom2[pairs_hybrid[:, 0]]
 
-											pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
-											pop2_chrom2_hy = pop2_chrom2_has0[pairs_hybrid[:, 1]]	
+											pop2_chrom1_hy = pop2_chrom1[pairs_hybrid[:, 1]]
+											pop2_chrom2_hy = pop2_chrom2[pairs_hybrid[:, 1]]	
+
+											#compare the shapes. if one is shorter, add a column of 0s. 
+											pop1_chrom1_hy, pop2_chrom1_hy = compare_hy_ch(pop1_chrom1_hy, pop2_chrom1_hy)
+											pop1_chrom1_hy, pop2_chrom2_hy = compare_hy_ch(pop1_chrom1_hy, pop2_chrom2_hy)
+
+											pop1_chrom2_hy, pop2_chrom1_hy = compare_hy_ch(pop1_chrom2_hy, pop2_chrom1_hy)
+											pop1_chrom2_hy, pop2_chrom2_hy = compare_hy_ch(pop1_chrom2_hy, pop2_chrom2_hy)
+
+
+
+
+
+											# if pop1_chrom1_hyshape[1] != pop2_chrom1_hyshape[1]:
+											# 	shorter = min(np.shape(a)[1], np.shape(b)[1]) #find the array with less columns 
+											# 	if np.shape(a)[1] == shorter: 
+											# 		addthis = np.zeros(len(a)).reshape(len(a), 1)
+											# 		a = np.hstack((a, addthis))
+
+											# 	else: 
+											# 		addthis = np.zeros(len(b)).reshape(len(b), 1)
+											# 		b = np.hstack((b, addthis))
+
+
+											# elif pop1_chrom1_hyshape[1] != pop2_chrom2_hyshape[1]
+
+											# elif pop1_chrom2_hyshape[1] != pop2_chrom1_hyshape[1]
+											# elif pop1_chrom2_hyshape[1] != pop2_chrom2_hyshape[1]
 
 											print('pop1_chrom1_hy')
 											print(pop1_chrom1_hy)	
-											# print('pop1_chrom2_hy')
-											# print(pop1_chrom2_hy)
-											# print('pop2_chrom1_hy')
-											# print(pop2_chrom1_hy)
-											# print('pop2_chrom2_hy')
-											# print(pop2_chrom2_hy)								
+											print('pop1_chrom2_hy')
+											print(pop1_chrom2_hy)
+											print('pop2_chrom1_hy')
+											print(pop2_chrom1_hy)
+											print('pop2_chrom2_hy')
+											print(pop2_chrom2_hy)								
 
 											#recombination:
 											#randomly pick 0 or 1 to decide which pairs to match 
@@ -882,6 +925,8 @@ def main():
 										hybrid_overall_recomb2 = (F1_after_recomb2_chrom2 + F1_after_recomb2_chrom1) / 2
 
 										hybrid_overall_all = np.vstack((hybrid_overall_recomb1, hybrid_overall_recomb2)) #stack all hybrids phenos. each row is one individual. 
+										print('hybrid_overall_recomb1', hybrid_overall_recomb1)
+										print('hybrid_overall_recomb2', hybrid_overall_recomb2)
 
 										# generate the hybrid h values matrix. 
 										hybrid_h = np.vstack((pop1_h, pop2_h))
@@ -889,6 +934,15 @@ def main():
 										# split the overall into 2 chromosomes accordingly
 										hybrid_overall_one = hybrid_overall_all[:, 0:(np.shape(pop1_h)[0])]
 										hybrid_overall_two = hybrid_overall_all[:, (np.shape(pop1_h)[0]):((np.shape(pop1_h)[0]) + (np.shape(pop2_h)[0]))]
+
+										print('hybrid_overall_all')
+										print(hybrid_overall_all)
+										print('np.shape(pop1_h)[0]', np.shape(pop1_h)[0])
+
+
+										print('hybrid_overall_one', hybrid_overall_one)
+										print('hybrid_overall_two', hybrid_overall_two)
+										print('pop1_h', pop1_h)
 
 										# replace with the h values 
 										for x in range(0, np.shape(hybrid_overall_one)[1]):
@@ -899,6 +953,14 @@ def main():
 
 										# connect the two chromosomes again to make the overall 
 										hybrid_overall_all = np.hstack((hybrid_overall_one, hybrid_overall_two))
+
+										print('hybrid_overall_all')
+										print(hybrid_overall_all)
+										print('mut_hybrid')
+										print(mut_hybrid)
+
+										print(np.shape(mut1))
+										print(np.shape(mut2))
 
 										hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
