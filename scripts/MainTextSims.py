@@ -195,9 +195,6 @@ def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seed
 		mut = mut 
 
 	else:	
-
-		# seed_idx = seedlist[int(np.sum(popnmutlist)): int(np.sum(popnmutlist)) + nmuts]
-
 		newmuts_collected = np.array([])
 		w = 0 
 		while w < nmuts:
@@ -352,19 +349,19 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 nreps = 2 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [10] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 
 # u_adapt = (0.0001/alpha_adapt)
 
-sigma_adapts = [10] #selection strengths
+sigma_adapts = [5] #selection strengths
 
 opt_dists = [1] #distance to optima
 
 n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 30 #total number of generations populations adapt for
+maxgen = 2000 #total number of generations populations adapt for
 
 dom = [9]
 # 9 -> variable, chosen from random distribution
@@ -372,7 +369,11 @@ dom = [9]
 
 pevo = [0, 1] #this is parallel evolution. either on or off. 0 means off, 1 means on. 
 
-svar = [0, 1] #standing variation. 0 means off, 1 means on. 
+#PARAMETERS ABOUT SGV
+
+svar = 1  #standing variation. 0 means off, 1 means on. pick only 1 value. there is no loop. 
+premut = 50 # how many preadded mutations we want
+svar_freq = 0.10 #how many individuals have these mutations in the population 
 
 
 
@@ -451,32 +452,64 @@ def main():
 
 								while rep < nreps:
 
-									#found identical populations
-									popfound1 = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
-									popfound2 = np.array([[1]] * N_adapt) 
-									popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
+									#SVAR OFF (svar = 0)
+									if svar == 0: # no standing variation. do everything as usual. 
 
-									mut = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
+										popfound1 = np.array([[1]] * N_adapt) #this creates an array of 1 coloumn of ones and N_adapt times rows. 
+										popfound2 = np.array([[1]] * N_adapt) 
+										popfound = np.column_stack((popfound1, popfound2)) # create a diploid genotype. #of columns= #of chromosomes 
 
-									[pop1, mut1] = [popfound, mut] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
-									[pop2, mut2] = [popfound, mut] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
+										mut = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
 
-									pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
-									pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
+										[pop1, mut1] = [popfound, mut] # this creates pop and mut arrays for both parents. they are the same because we start from the same point. 
+										[pop2, mut2] = [popfound, mut] # mut1 = how farther you go from the origin due to mutations in pop1. same for mut2
 
-									pop2_chrom1 = popfound2 # 1st chromosome of pop2
-									pop2_chrom2 = popfound2 # 2nd chromosome of pop2
+										pop1_chrom1 = popfound1 # genotype of 1st chromosome of pop1
+										pop1_chrom2 = popfound1 # genotype of 2nd chromosome of pop1
 
-									print(popfound1)
+										pop2_chrom1 = popfound2 # 1st chromosome of pop2
+										pop2_chrom2 = popfound2 # 2nd chromosome of pop2
+
+										pop1_h = np.random.uniform(low = 0, high = 1, size = 1)
+										pop2_h = np.random.uniform(low = 0, high = 1, size = 1)
+									
+									#SVAR ON (svar = 1)
+									else: 
+										popfound1 = np.array([[1]] * N_adapt) # we start of the same. 
+										popfound2 = np.array([[1]] * N_adapt)
+
+										svar_loci = np.zeros(N_adapt*premut).reshape(N_adapt, premut).astype(int)
+										svar_zero = np.zeros(np.shape(svar_loci)).astype(int)
+
+										i_sgv = 0 
+										while i_sgv < premut: 
+											rand4 = np.random.uniform(0, 1, size = N_adapt)
+											svar_where = np.where(svar_freq > rand4, rand4, 1)
+											svar_idx = np.where(svar_where == 1)
+											svar_loci[:, i_sgv][svar_idx] = 1 
+											i_sgv += 1
+
+										pop1_chrom1 = np.hstack((popfound1, svar_loci)) # genotype of 1st chromosome of pop1
+										pop1_chrom2 = np.hstack((popfound1, svar_zero)) # stick the zero matrix to 2nd population's genotype 
+
+										pop2_chrom1 = np.hstack((popfound2, svar_loci)) # 1st chromosome of pop2
+										pop2_chrom2 = np.hstack((popfound2, svar_zero))								
+
+										mut_initial = np.array([[0] * n]) #similar to above. filled with zeroes. number of coloumns: n. rows: 1. convert to a list 
+										svar_mut = np.random.normal(0, alpha_adapt, size = (premut, n)) # predetermined mutation list 
+										mut = np.vstack((mut_initial, svar_mut))
+
+										mut1 = np.copy(mut)
+										mut2 = np.copy(mut)
+
+										pop1_h = np.random.uniform(low = 0, high = 1, size = premut + 1).reshape(premut + 1, 1)
+										pop2_h = np.random.uniform(low = 0, high = 1, size = premut + 1).reshape(premut + 1, 1)
 
 									pop1_overall = ((pop1_chrom1 + pop1_chrom2) / 2 ) # two chromosomes of pop1 averaged
 									pop2_overall = ((pop2_chrom1 + pop2_chrom2) / 2 ) # two chromosomes of pop2 averaged
 
 									pop1_overall_summed = np.copy(pop1_overall)
 									pop2_overall_summed = np.copy(pop2_overall)
-
-									pop1_h = np.random.uniform(low = 0, high = 1, size = 1)
-									pop2_h = np.random.uniform(low = 0, high = 1, size = 1)
 
 									pop1nmutslist = np.array([])
 									pop2nmutslist = np.array([])
@@ -540,7 +573,6 @@ def main():
 										[pop1_genotype, pop1_overall, mut1, pop1nmuts, pop1_h, pop1newmuts] = mutate(off1, u_adapt, alpha_adapt, n, mut1, pop1nmutslist, mutlist, hlist, pop1_h, seedlist, rep)
 										[pop2_genotype, pop2_overall, mut2, pop2nmuts, pop2_h, pop2newmuts] = mutate(off2, u_adapt, alpha_adapt, n, mut2, pop2nmutslist, mutlist, hlist, pop2_h, seedlist, rep)
 
-
 										# print('mut2')
 										# print(mut2)
 
@@ -583,6 +615,11 @@ def main():
 										mut_n2_overall = np.round(np.vstack((pop1_mut_n2, pop2_mut_n2)), 3)
 
 										h_overall = np.vstack((pop1_h, pop2_h))
+										# print('pop1_h')
+										# print(type(pop1_h))
+										# print(pop1_h)
+										# print('pop2_h')
+										# print(pop2_h)
 
 										# print('pop1_h')
 										# print(np.shape(pop1_h))
@@ -594,6 +631,9 @@ def main():
 										# print(np.shape(mut1))
 										# print('pop1_overall')
 										# print(np.shape(pop1_overall))
+										# print('h_overall')
+										# print(h_overall)
+										# print('freq_fixed')
 
 										freq_fixed = np.where(freq_overall > 0.5)[0]
 										h_fixed = h_overall[freq_fixed]
@@ -620,7 +660,6 @@ def main():
 
 									while i_pevo < len(pevo):
 										pevo_adapt = pevo[i_pevo]
-										print('pevo_adapt', pevo_adapt)
 
 										pevolist = np.array([1]) #this is to append the pevo values later on in the correct format to save into the data tables at the very end
 
@@ -794,14 +833,14 @@ def main():
 											i = 0 
 											pop1_pe_idx_checked = 0										
 											while i < len(pop1_pe_idx):
-												if pop1_freq[pop1_pe_idx[i]] >= 0.10: 
+												if pop1_freq[pop1_pe_idx[i]] >= 0.80: 
 													pop1_pe_idx_checked += 1
 												i += 1 
 
 											pop2_pe_idx_checked = 0									
 											i = 0 
 											while i < len(pop2_pe_idx):
-												if pop2_freq[pop2_pe_idx[i]] >= 0.10: 
+												if pop2_freq[pop2_pe_idx[i]] >= 0.80: 
 													pop2_pe_idx_checked += 1
 												i += 1 
 
@@ -1039,7 +1078,7 @@ def main():
 
 										# reshape the fitness arrays. only 1 column. 
 										h_fit = np.reshape(h_fit, (len(h_fit), 1))
-										
+
 										w1 = np.reshape(w1, (len(w1), 1))
 										w2 = np.reshape(w2, (len(w2), 1))
 
