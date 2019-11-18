@@ -217,8 +217,8 @@ def mutate(off, u_adapt, alpha, n, mut, popnmutlist, mutlist, hlist, pop_h, seed
 			hstate = RandomState(h_seed)
 			newh = hstate.uniform(0, 1, size = 1)
 			pop_new_h = np.append(pop_new_h, newh)
-
 			w += 1 
+		
 		pop_h = np.append(pop_h, pop_new_h)
 		pop_h = np.reshape(pop_h, (np.shape(pop_h)[0], 1))
 
@@ -655,14 +655,10 @@ def main():
 									mut1 = np.delete(mut1, 0, 0) #delete the first rows of mut matrices
 									mut2 = np.delete(mut2, 0, 0)
 
-									pop1_h = np.delete(pop1_h, 0, 0) #delete the first rows of poph matrices 
+									pop1_h = np.delete(pop1_h, 0, 0) #delete the first rows of pop_h matrices 
 									pop2_h = np.delete(pop2_h, 0, 0)
 
-									pop1_chrom1 = np.delete(pop1_chrom1, 0, 1)
-									pop1_chrom2 = np.delete(pop1_chrom2, 0, 1) 
 
-									pop2_chrom1 = np.delete(pop2_chrom1, 0, 1) 
-									pop2_chrom2 = np.delete(pop2_chrom1, 0, 1)
 
 									#loop over parallel evolution - on or off
 									i_pevo = 0 
@@ -872,7 +868,9 @@ def main():
 											# pop1_chrom2_hy, pop2_chrom2_hy, pop1_hh, pop2_hh = compare_hy_ch(pop1_chrom2_hy, pop2_chrom2_hy, pop1_h, pop2_h)
 
 											# #recombination:
-											#randomly pick 0 or 1 to decide which pairs to match 
+											#randomly pick 0 or 1 to decide which pairs to match
+
+
 
 											num = np.random.randint(2, size = 1).tolist()
 												
@@ -897,6 +895,12 @@ def main():
 												F1_after_recomb2 = crossover(F1_before_recomb2)
 												F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
 												F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
+
+											pop1_chrom1_hy = np.delete(pop1_chrom1_hy, 0, 1) #delete the first columns from genotype matrices in both populations 
+											pop1_chrom2_hy = np.delete(pop1_chrom2_hy, 0, 1) 
+
+											pop2_chrom1_hy = np.delete(pop2_chrom1_hy, 0, 1) 
+											pop2_chrom2_hy = np.delete(pop2_chrom1_hy, 0, 1) 
 
 											print('F1_after_recomb1_chrom1', F1_after_recomb1_chrom1)
 											print('F1_before_recomb1', F1_before_recomb1)
