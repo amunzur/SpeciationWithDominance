@@ -375,9 +375,9 @@ sigma_adapts = [5] #selection strengths
 
 opt_dists = [1] #distance to optima
 
-n_angles = 3 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 3000 #total number of generations populations adapt for
+maxgen = 3500 #total number of generations populations adapt for
 
 dom = [9]
 # 9 -> variable, chosen from random distribution
@@ -678,11 +678,11 @@ def main():
 											pop2_zero2 = np.zeros(len(pop2_chrom2) * pop1_chrom2.shape[1]).reshape(len(pop1_chrom2), pop1_chrom2.shape[1])
 
 											#attach the zero matrices
-											pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1))
-											pop1_chrom2_has0 = np.hstack((pop1_chrom2, pop1_zero2))
+											pop1_chrom1_has0 = np.hstack((pop1_chrom1, pop1_zero1)).astype(int)
+											pop1_chrom2_has0 = np.hstack((pop1_chrom2, pop1_zero2)).astype(int)
 
-											pop2_chrom1_has0 = np.hstack((pop2_zero1, pop2_chrom1))
-											pop2_chrom2_has0 = np.hstack((pop2_zero2, pop2_chrom2))
+											pop2_chrom1_has0 = np.hstack((pop2_zero1, pop2_chrom1)).astype(int)
+											pop2_chrom2_has0 = np.hstack((pop2_zero2, pop2_chrom2)).astype(int)
 
 											#pick the related chromosomes of the pairs  
 											pop1_chrom1_hy = pop1_chrom1_has0[pairs_hybrid[:, 0]]
@@ -724,8 +724,7 @@ def main():
 											hybrid_h = np.vstack((pop1_h, pop2_h))
 											mut_hybrid = np.vstack((mut1, mut2))
 
-										else: #if pevo is on (there is parallel evolution), then do something different: 
-											
+										else: #if pevo is on (there is parallel evolution), then do something different: 										
 											#=====================================================
 											mut1 = np.delete(mut1, 0, axis = 0)
 											mut2 = np.delete(mut2, 0, axis = 0)
@@ -747,7 +746,6 @@ def main():
 											pop2_chrom1 = pop2_genotype[0]
 											pop2_chrom2 = pop2_genotype[1]
 
-
 											#before doing the step below, put the genotype matrix in the correct format. horizontally stack it so that ch1 and ch2 are aligned. both ch of individuals are in the same row 
 											pop1_genotype_pe = np.hstack((pop1_chrom1, pop1_chrom2))
 											pop2_genotype_pe = np.hstack((pop2_chrom1, pop2_chrom2))
@@ -761,16 +759,13 @@ def main():
 											pop2_chrom1 = np.delete(pop2_chrom1, 0, axis = 1)
 											pop2_chrom2 = np.delete(pop2_chrom2, 0, axis = 1)
 
+											print(pevo_adapt, 'beforezero', 'hybrid_chrom1', hybrid_chrom1)
+											print(pevo_adapt, 'beforezero', 'hybrid_chrom2', hybrid_chrom2)
+
 											pop1_chrom1_pe_loci = pop1_chrom1[:, pop1_pe_idx]
 											pop1_chrom2_pe_loci = pop1_chrom2[:, pop1_pe_idx]
 											pop2_chrom1_pe_loci = pop2_chrom1[:, pop2_pe_idx]
 											pop2_chrom2_pe_loci = pop2_chrom2[:, pop2_pe_idx]
-
-											# print('pop1_pe_idx', pop1_pe_idx)
-											# print('pop2_pe_idx', pop2_pe_idx)
-
-											# print('mut1', mut1)
-											# print('mut2', mut2)
 
 											pop1_chrom1_del = np.delete(pop1_chrom1, pop1_pe_idx, axis = 1)
 											pop1_chrom2_del = np.delete(pop1_chrom2, pop1_pe_idx, axis = 1)
@@ -782,11 +777,8 @@ def main():
 
 											pop1_chrom1_has0 = np.hstack((pop1_chrom1_pe_loci, pop1_zero, pop1_chrom1_del))
 											pop1_chrom2_has0 = np.hstack((pop1_chrom2_pe_loci, pop1_zero, pop1_chrom2_del))
-											pop2_chrom1_has0 = np.hstack((pop2_chrom1_pe_loci, pop2_zero, pop2_chrom1_del))
-											pop2_chrom2_has0 = np.hstack((pop2_chrom2_pe_loci, pop2_zero, pop2_chrom2_del))
-
-											# print('pop1_chrom1_hy', pop1_chrom1_hy)
-
+											pop2_chrom1_has0 = np.hstack((pop2_chrom1_pe_loci, pop2_chrom1_del, pop2_zero))
+											pop2_chrom2_has0 = np.hstack((pop2_chrom2_pe_loci, pop2_chrom2_del, pop2_zero))
 
 											#FIX H MATRICES
 											pop1_h = np.delete(pop1_h, 0, axis = 0)
@@ -814,40 +806,18 @@ def main():
 											mut2 = np.vstack((mut2_pe, mut2_del))
 
 											mut_hybrid = np.vstack((mut1_pe, mut2_del, mut1_del))
-
 											#=======================================================
-
-
-
-											# print('pop1_pe_loci', pop1_pe_loci)
-											# print('pop1_zero', pop1_zero)
-											# print('pop1_chrom1_del', pop1_chrom1_del)
-											# print('pop1_chrom2_del', pop1_chrom2_del)
-
-											# print('pop2_pe_loci', pop2_pe_loci)
-											# print('pop2_zero', pop2_zero)
-											# print('pop2_chrom1_del', pop2_chrom1_del)
-											# print('pop2_chrom2_del', pop2_chrom2_del)
-
-											# print('pop1_chrom1_hy', pop1_chrom1_hy)
-											# print('pop1_chrom2_hy', pop1_chrom2_hy)
-											# print('pop2_chrom1_hy', pop2_chrom1_hy)
-											# print('pop2_chrom2_hy', pop2_chrom2_hy)
-
 
 											pop1_geno_pe = np.hstack((pop1_chrom1_hy, pop1_chrom2_hy))
 											pop2_geno_pe = np.hstack((pop2_chrom1_hy, pop2_chrom2_hy))
 
-											#make pairs
-											# pairs_hybrid = np.resize(np.random.choice(len(pop1_chrom1), size=len(pop1_chrom1), replace=False), (int(len(pop1_chrom1)/2), 2))
-
-											pop1_chrom1_hy = pop1_chrom1_has0[pairs_hybrid[:, 0]]
+											pop1_chrom1_hy = pop1_chrom1_has0[pairs_hybrid[:, 0]] #choose the chroms of the pairs 
 											pop1_chrom2_hy = pop1_chrom2_has0[pairs_hybrid[:, 0]]
 
 											pop2_chrom1_hy = pop2_chrom1_has0[pairs_hybrid[:, 1]]
 											pop2_chrom2_hy = pop2_chrom2_has0[pairs_hybrid[:, 1]]
 
-											# #recombination:
+											#recombination:
 											#randomly pick 0 or 1 to decide which pairs to match
 
 											num = np.random.randint(2, size = 1).tolist()
@@ -874,22 +844,6 @@ def main():
 												F1_after_recomb2_chrom1 = F1_after_recomb2[::2] #picks every other odd row, chrom1
 												F1_after_recomb2_chrom2 = F1_after_recomb2[1::2] #picks every other even row, chrom2
 
-											
-											# print('F1_after_recomb1_chrom2', F1_after_recomb1_chrom2)
-											# print('F1_after_recomb2_chrom1', F1_after_recomb2_chrom1)
-											# print('F1_after_recomb2_chrom2', F1_after_recomb2_chrom2)
-
-											
-											# if np.shape(pop1_geno_pe)[1] % 2 == 0:
-
-											# F1_after_recomb1_chrom1 = np.delete(F1_after_recomb1_chrom1, 0, axis = 1)
-											# F1_after_recomb2_chrom1 = np.delete(F1_after_recomb2_chrom1, 0, axis = 1)
-											# F1_after_recomb1_chrom2 = np.delete(F1_after_recomb1_chrom2, 0, axis = 1)
-											# F1_after_recomb2_chrom2 = np.delete(F1_after_recomb2_chrom2, 0, axis = 1)
-
-											# print('F1_after_recomb1_chrom1', F1_after_recomb1_chrom1)
-											# print('F1_before_recomb1', F1_before_recomb1)
-
 											#CALCULATE KENMET - indicator of parallel evolution
 											# check which mutations are fixed
 											i = 0 
@@ -915,21 +869,17 @@ def main():
 										hybrid_chrom1 = np.vstack((F1_after_recomb1_chrom1, F1_after_recomb2_chrom1))
 										hybrid_chrom2 = np.vstack((F1_after_recomb1_chrom2, F1_after_recomb2_chrom2))
 
+										print(pevo_adapt, 'afterzero', 'hybrid_chrom1', hybrid_chrom1)
+										print(pevo_adapt, 'afterzero', 'hybrid_chrom2', hybrid_chrom2)
+										
+
 										#save all the hybrid chromosomes in one array: 
 										hybrid_genotype = np.hstack((hybrid_chrom1, hybrid_chrom2)) #each row has both chrom1 and chrom2 of each individual 
 
 										hybrid_overall_all = (hybrid_chrom1 + hybrid_chrom2) / 2
-										# print('hybrid_overall_all', hybrid_overall_all)
 
 										for x in range(0, np.shape(hybrid_overall_all)[1]):
 											hybrid_overall_all[:, x - 1][hybrid_overall_all[:, x - 1] == 0.5] = hybrid_h[x - 1]
-										# print('hybrid_overall_all', hybrid_overall_all)
-
-										# print('mut_hybrid')
-										# print(mut_hybrid)
-
-										# print(np.shape(mut_hybrid))
-										# print((np.shape(hybrid_overall_all)))
 
 										hybrid_pheno = np.dot(hybrid_overall_all, mut_hybrid)
 
