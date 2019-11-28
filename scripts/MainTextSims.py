@@ -291,10 +291,10 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 10 #number of replicates for each set of parameters
+nreps = 15 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [10] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 
@@ -304,9 +304,9 @@ sigma_adapts = [5] #selection strengths
 
 opt_dists = [1] #distance to optima
 
-n_angles = 2 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 6 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 20 #total number of generations populations adapt for
+maxgen = 3000 #total number of generations populations adapt for
 
 dom = [0.5, 9]
 # 9 -> variable, chosen from random distribution
@@ -853,23 +853,13 @@ def main():
 										elif num[0] == 1:
 
 											# chrom1-chrom2 and chrom2-chrom1 mating
-											F2_after_recomb1 = np.concatenate(shuffle_along_axis(hybrid_chrom1_F2, 1))
-											F2_after_recomb2 = np.concatenate(shuffle_along_axis(hybrid_chrom2_F2, 1))
+											stacked = np.concatenate(np.stack((np.concatenate(hybrid_chrom1[pairs_F2]), np.concatenate(hybrid_chrom2[pairs_F2])), axis = 1))
+
+											F2_after_recomb1 = stacked[::2] #chrom1 of F2, pick every odd row 
+											F2_after_recomb2 = stacked[1::2,:] #chrom2 of F2, pick every even row 
 											
 											# generate the overall genotype by putting the chromosomes together 
 											F2_genotype = np.hstack((F2_after_recomb1, F2_after_recomb2))
-
-											#change the places of chrom1 and chrom2 in every other odd row so that we can have recombination in opposite chromosomes. 
-											#this will help to align chrom1 and chrom2 in the right way 
-											#pick every odd row in genotype matrix and split into two chromosomes vertically
-											every_odd = np.hsplit(np.concatenate(hybrid_genotype[pairs_F2])[::2], 2)
-											switched = np.hstack((every_odd[1], every_odd[0]))
-
-											#pick every even row so that we can put them in the right places 
-											every_even = hybrid_genotype[1::2]
-
-											#stack them 
-											F2_genotype = np.concatenate(np.stack((switched, every_even), axis = 1))
 
 										# F2 mut list is the same as F1 mut list since F1 generation didn't undergo any new mutations while making F2 
 										mut_hybrid_F2 = np.copy(mut_hybrid)
