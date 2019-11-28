@@ -26,10 +26,10 @@ def open_output_files(n, N, alpha, sigma, opt_dist, dom, pevo):
 	outfile_A = open(os.path.join(data_dir, "mutsummary%s.csv" %(sim_id)), "w") #summary data
 	outfile_B = open(os.path.join(data_dir, "phenotypes%s.csv" %(sim_id)), "w") #hybrid phenotypes at the end 
 	outfile_C = open(os.path.join(data_dir, "adaptation%s.csv" %(sim_id)), "w")
-	outfile_D = open(os.path.join(data_dir, "fitness%s.csv" %(sim_id)), "w")#save the fitness of the parents and the F1 hybrids in the same file 
+	# outfile_D = open(os.path.join(data_dir, "fitness%s.csv" %(sim_id)), "w")#save the fitness of the parents and the F1 hybrids in the same file 
 	outfile_E = open(os.path.join(data_dir, "fitMean%s.csv" %(sim_id)), "w")
 
-	return [outfile_A, outfile_B, outfile_C, outfile_D, outfile_E]
+	return [outfile_A, outfile_B, outfile_C, outfile_E] #later, add the outfile D if needed
 
 def write_data_to_output(fileHandles, data):
 	"""
@@ -291,10 +291,10 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 15 #number of replicates for each set of parameters
+nreps = 1 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [1000] #number of diploid individuals (positive integer)
+N_adapts = [10] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 
@@ -306,7 +306,7 @@ opt_dists = [1] #distance to optima
 
 n_angles = 6 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 3000 #total number of generations populations adapt for
+maxgen = 10 #total number of generations populations adapt for
 
 dom = [0.5, 9]
 # 9 -> variable, chosen from random distribution
@@ -326,7 +326,7 @@ svar_freq = 0.10 #how many individuals have each of these mutations in the popul
 def main():
 
 	#open the files, return file handles to each 
-	[fileHandle_A, fileHandle_B, fileHandle_C, fileHandle_D, fileHandle_E] = open_output_files(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom, pevo)
+	[fileHandle_A, fileHandle_B, fileHandle_C, fileHandle_E] = open_output_files(ns, N_adapts, alpha_adapts, sigma_adapts, opt_dists, dom, pevo)
 
 	#loop over population size
 	i_N = 0
@@ -1007,7 +1007,7 @@ def main():
 										q = np.reshape(np.repeat(pevo_adapt, np.shape(w1)[0], axis = 0), np.shape(w1)[0], 1)
 
 										fitness_sum = np.column_stack((i, f, w1, w2, h_fit, F2_fit, g, a, b, c, d, e, F1_dist1, F1_dist2, F1_dist_calc, F2_dist1, F2_dist2, F2_dist_calc, q))
-										np.savetxt(fileHandle_D, fitness_sum, fmt = '%.3f', delimiter = ',')
+										# np.savetxt(fileHandle_D, fitness_sum, fmt = '%.3f', delimiter = ',')
 
 										#CREATE THE FITNESS ARRAY 
 										#calculate the mean fitnesses 
@@ -1059,7 +1059,7 @@ def main():
 	close_output_files(fileHandle_A)
 	close_output_files(fileHandle_B)
 	close_output_files(fileHandle_C)
-	close_output_files(fileHandle_D)
+	# close_output_files(fileHandle_D)
 	close_output_files(fileHandle_E)
 
 	# add header to the files (column names)
@@ -1083,9 +1083,9 @@ def main():
 	df_pheno.to_csv("phenotypes%s.csv" %(sim_id))
 
 	#individual fitness
-	df_fitness = pd.read_csv("fitness%s.csv" %(sim_id), header = None)
-	df_fitness.columns = ['rep', 'angle', 'parent1', 'parent2', 'F1', 'F2', 'h', 'N', 'sigma', 'u', 'alpha', 'opt_dist', 'F1_dist1', 'F1_dist2', 'F1_dist_calc', 'F2_dist1', 'F2_dist2', 'F2_dist_calc', 'pevo']
-	df_fitness.to_csv("fitness%s.csv" %(sim_id))
+	# df_fitness = pd.read_csv("fitness%s.csv" %(sim_id), header = None)
+	# df_fitness.columns = ['rep', 'angle', 'parent1', 'parent2', 'F1', 'F2', 'h', 'N', 'sigma', 'u', 'alpha', 'opt_dist', 'F1_dist1', 'F1_dist2', 'F1_dist_calc', 'F2_dist1', 'F2_dist2', 'F2_dist_calc', 'pevo']
+	# df_fitness.to_csv("fitness%s.csv" %(sim_id))
 
 	#fitMean
 	df_fitMean = pd.read_csv("fitMean%s.csv" %(sim_id), header = None)
