@@ -291,22 +291,22 @@ def calc_kenmet(pop1_genotype_pe, pop1_pe_idx_checked, pop2_genotype_pe, pop2_pe
 ##UNIVERSAL PARAMETERS##
 ######################################################################
 
-nreps = 1 #number of replicates for each set of parameters
+nreps = 15 #number of replicates for each set of parameters
 ns = [2] #phenotypic dimensions (positive integer >=1)
 
-N_adapts = [10] #number of diploid individuals (positive integer)
+N_adapts = [1000] #number of diploid individuals (positive integer)
 
 alpha_adapts = [0.1] #mutational sd (positive real number)
 
 # u_adapt = (0.0001/alpha_adapt)
 
-sigma_adapts = [5] #selection strengths
+sigma_adapts = [1] #selection strengths
 
 opt_dists = [1] #distance to optima
 
-n_angles = 6 #number of angles between optima to simulate (including 0 and 180) (>=2)
+n_angles = 40 #number of angles between optima to simulate (including 0 and 180) (>=2)
 
-maxgen = 10 #total number of generations populations adapt for
+maxgen = 2500 #total number of generations populations adapt for
 
 dom = [0.5, 9]
 # 9 -> variable, chosen from random distribution
@@ -317,7 +317,7 @@ pevo = [0, 1] #this is parallel evolution. either on or off. 0 means off, 1 mean
 #PARAMETERS ABOUT SGV
 svar = 1  #standing variation. 0 means off, 1 means on. pick only 1 value. there is no loop. 
 premut = 30 # how many preadded mutations we want
-svar_freq = 0.10 #how many individuals have each of these mutations in the population
+svar_freq = 0.20 #how many individuals have each of these mutations in the population
 
 ######################################################################
 ##FUNCTION FOR POPULATIONS TO ADAPT##
