@@ -57,7 +57,7 @@ ns = [2] #phenotypic dimensions (positive integer >=1)
 
 N_adapts = [1000] #number of diploid individuals (positive integer)
 
-alpha_adapts = [0.1] #mutational sd (positive real number)
+alpha_adapts = [0.1/math.sqrt(n)] #mutational sd (positive real number)
 # alpha_adapts = [0.1] #mutational sd (positive real number)
 
 # u_adapt = (0.0001/alpha_adapt)
