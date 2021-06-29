@@ -5,5 +5,8 @@ Extrinsic post-zygotic isolating barriers result as a consequence of the alleles
 
 ---------------------------------------------------------------------
 
-The script named `maintext_community.py` sources the functions found in the `utilities.py` file and runs the simulations. The script outputs the following files, explained below. Each file will have column names explaning the contents of the columns.
-1. `phenotypes.csv`: This file contains the phenotypes of the parents and the both classes of hybrids. The parameters used in the simulations are also included. 
+The script named `maintext_community.py` sources the functions found in the `utilities.py` file and runs the simulations. The script outputs the following files, explained below. Each file will have column names explaning the contents of the columns. The output files also contain columns pertaining to the columns used in the simulations.
+1. `phenotypes.csv`: This file contains the phenotypes of the parents and the both classes of hybrids.
+2. `adaptation.csv`: This file keeps track of the mutations that arise during adaptation. Based on it, it is possible to track each mutation down to the population it arose and its effect size. Each row is for a single mutation that arose and fixed in the population. Lost mutations aren't tracked.
+3. `mutsummary.csv`: This file gives more information about the mutation events such as the mean dominance coefficients and standard deviations of mutations in the parental populations. 
+4. `fitMean.csv`: This file contains information aboutthe fitness of the parents as well as both classes of hybrids. Note that we consider the mean fitness for the `BC` and `F_2` populations. 
